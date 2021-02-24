@@ -1,7 +1,11 @@
 const path = require("path");
 const loadedComponents = [];
 module.exports = (() => {
-    const moduleName =  path.basename(module.parent.filename).replace(".js","");
+    let moduleName =  path.basename(module.parent.filename).replace(".js","");
+    if (moduleName === "utils"){
+        moduleName =  path.basename(module.parent.parent.filename).replace(".js","");
+    }
+
     const moduleConfig = require(module.parent.filename.replace(`${moduleName}.js`,"package.json"));
     if (!moduleConfig){
         throw new Error(`failed to load configuration for module:"${moduleName}"`);
