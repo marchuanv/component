@@ -20,7 +20,12 @@ module.exports = {
     },
     cache: {
         add: ( name, value) => {
-            _cache.push({ name, value });
+            const existingItem = module.exports.cache.find(name);
+            if (existingItem){
+                existingItem.value = value;
+            } else {
+                _cache.push({ name, value });
+            }
         },
         find: (name) => {
             return _cache.find( i => i.name === name);
