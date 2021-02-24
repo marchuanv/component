@@ -23,7 +23,7 @@ module.exports = {
             _cache.push({ name, value });
         },
         find: (name) => {
-            return _cache.find(name);
+            return _cache.find( i => i.name === name);
         }
     }
 };
