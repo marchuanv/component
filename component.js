@@ -1,4 +1,4 @@
-const cache = [];
+const _cache = [];
 module.exports = {
     require: (moduleName, cache = true) => {
         let required = null;
@@ -20,10 +20,10 @@ module.exports = {
     },
     cache: {
         add: ( name, value) => {
-            cache.push({ name, value });
+            _cache.push({ name, value });
         },
         find: (name) => {
-            return cache.find(name);
+            return _cache.find(name);
         }
     }
 };
