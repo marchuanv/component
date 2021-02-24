@@ -9,4 +9,14 @@ Module.prototype.require = (module, cache) => {
         return require(module);
     }
 }
-module.exports = {};
+const cache = [];
+module.exports = {
+    cache: {
+        add: (name, value) => {
+            cache.push({ name,value });
+        },
+        find: (name) => {
+            return cache.find( x => x.name === name );
+        }
+    }
+};
