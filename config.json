@@ -1,7 +1,0 @@
-{
-    "host": {
-        "name": "localhost",
-        "port": 3000,
-        "path": "/host"
-    }
-}

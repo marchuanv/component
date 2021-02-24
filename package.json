@@ -1,8 +1,8 @@
 {
-  "name": "component.messagebus.host",
+  "name": "component.config",
   "version": "1.0.0",
-  "description": "module for configuring and hosting a messagebus",
-  "main": "component.messagebus.host.js",
+  "description": "module for configuring a component",
+  "main": "component.config.js",
   "engines": {
     "node": "12.16.1",
     "npm": "6.13.4"
@@ -12,20 +12,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/marchuanv/component.messagebus.host.git"
+    "url": "git+https://github.com/marchuanv/component.config.git"
   },
   "author": "Marchuan Van Der Merwe",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/marchuanv/component.messagebus.host/issues"
+    "url": "https://github.com/marchuanv/component.config/issues"
   },
-  "homepage": "https://github.com/marchuanv/component.messagebus.host#readme",
-  "dependencies": {
-    "utils": "git+https://github.com/marchuanv/utils.git",
-    "component.request.handler.unsecure": "git+https://github.com/marchuanv/component.request.handler.unsecure.git",
-    "component.delegate": "git+https://github.com/marchuanv/component.delegate.git"
-  },
-  "devDependencies": {
-    "component.request.unsecure": "git+https://github.com/marchuanv/component.request.unsecure.git"
+  "homepage": "https://github.com/marchuanv/component.config#readme",
+  "dependencies": {},
+  "component": {
+    "host": {
+      "hostname": "localhost",
+      "port": 3000
+    }
   }
 }
