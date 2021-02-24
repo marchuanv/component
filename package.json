@@ -1,10 +1,10 @@
 {
-  "name": "component.config",
+  "name": "component",
   "hostname": "localhost",
   "port": 3000,
   "version": "1.0.0",
-  "description": "module for configuring a component",
-  "main": "component.config.js",
+  "description": "base module for all components",
+  "main": "component.js",
   "engines": {
     "node": "12.16.1",
     "npm": "6.13.4"
@@ -14,13 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/marchuanv/component.config.git"
+    "url": "git+https://github.com/marchuanv/component.git"
   },
   "author": "Marchuan Van Der Merwe",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/marchuanv/component.config/issues"
+    "url": "https://github.com/marchuanv/component/issues"
   },
-  "homepage": "https://github.com/marchuanv/component.config#readme",
+  "homepage": "https://github.com/marchuanv/component#readme",
   "dependencies": {}
 }

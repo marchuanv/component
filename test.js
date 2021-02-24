@@ -1,8 +1,6 @@
-const comonentConfig = require("./component.config.js");
+const comonent = require("./component.js");
 (async() => { 
-    if (!comonentConfig){
-        throw "Test Failed";
-    }
+    require("./package.json",false);
     process.exit();
 })().catch((err)=>{
     console.error(err);
