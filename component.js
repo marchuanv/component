@@ -1,6 +1,6 @@
 const _cache = [];
 module.exports = {
-    require: (moduleName, cache = true) => {
+    require: (moduleName, callingModuleName, cache = true) => {
         let required = null;
         if (cache){
             required = require(moduleName);
@@ -14,7 +14,7 @@ module.exports = {
             }
         }
         if (required){
-           // dependencies.push({ name: moduleName, dependency: dependantModuleName });
+            module.exports.cache.add( moduleName, callingModuleName );
             return required;
         }
     },
