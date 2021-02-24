@@ -43,15 +43,13 @@ module.exports = {
             if (resolvedPath){
                 let package = {};
                 let _path = resolvedPath.replace(`${moduleName}.js`,"package.json");
-                if (fs.existsSync(_path)) {
-                    package = require(path);
-                } else {
-                    while(!package){
-                        const dir = path.dirname(path);
-                        package = require(`${resolvedPath.replace(`${moduleName}.js`,"package.json")}`);
-                        
-                    };
-                }
+                while(!fs.existsSync(_path)){
+                    const dirPath = path.dirname(_path);
+                    const dirName = path.basename(dirPath);
+                    const indexPos = dirPath.lastIndexOf(dirName);
+                    _path = path.join(dirPath.substring(0, indexPos-1),"package.json");
+                };
+                package = require(_path);
                 
                 let dependencies = [];
                 if (package.dependencies){
