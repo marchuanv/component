@@ -1,9 +1,11 @@
 const path = require("path");
 const loadedComponents = [];
 module.exports = (() => {
-    let moduleName =  path.basename(module.parent.filename).replace(".js","");
+    let parent = module.parent;
+    let moduleName =  path.basename(parent.filename).replace(".js","");
     if (moduleName === "utils"){
-        moduleName =  path.basename(module.parent.parent.filename).replace(".js","");
+        parent = module.parent.parent;
+        moduleName =  path.basename(parent.filename).replace(".js","");
     }
 
     const moduleConfig = require(module.parent.filename.replace(`${moduleName}.js`,"package.json"));
