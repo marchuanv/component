@@ -36,3 +36,4 @@ module.exports = {
         }
     }
 };
+module.require = module.exports.require;
