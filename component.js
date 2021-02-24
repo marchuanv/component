@@ -5,10 +5,21 @@ const path = require("path");
 const fs = require('fs');
 
 const installModule = (moduleName) => {
-    return new Promise((resolve) => {
-        npm.load( () => npm.commands.install([moduleName],() => {
-            resolve();           
-        }));
+    return new Promise((resolve, reject) => {
+        npm.load( (err) => {
+            if (err){
+                return reject(err);
+            }
+            npm.commands.install([moduleName],(err) => {
+                if (err){
+                    return reject(err.stderr);
+                }
+                resolve();           
+            });
+            npm.on("log", function (message) {
+                console.log(message);
+            });
+        });
     });
 };
 

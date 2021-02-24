@@ -23,7 +23,6 @@
   },
   "homepage": "https://github.com/marchuanv/component#readme",
   "dependencies": {
-    "component.delegate": "github:marchuanv/component.delegate",
     "npm": "^7.5.6"
   }
 }
