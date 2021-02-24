@@ -1,4 +1,4 @@
-const dependencies = [];
+const cache = [];
 module.exports = {
     require: (moduleName, cache = true) => {
         let required = null;
@@ -18,7 +18,12 @@ module.exports = {
             return required;
         }
     },
-    getDependency: (moduleName) => {
-        return dependencies.find(d => d.name === moduleName).dependency;
+    cache: {
+        add: ( name, value) => {
+            cache.push({ name, value });
+        },
+        find: (name) => {
+            return cache.find(name);
+        }
     }
 };
