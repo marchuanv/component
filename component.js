@@ -14,7 +14,11 @@ module.exports = {
             }
         }
         if (required){
-            module.exports.cache.add( moduleName, callingModuleName );
+            let parent = module.parent;
+            while(parent.filename.indexOf(callingModuleName) === -1){
+                parent = parent.parent;
+            }
+            module.exports.cache.add( moduleName, { callingModuleName, callingModuleFileName: parent.filename });
             return required;
         }
     },
