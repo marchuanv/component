@@ -1,9 +1,16 @@
+const Module = require('module');
+const originalRequire = Module.prototype.require;
 const _cache = [];
 module.exports = {
-    require: (moduleName, callingModuleName, cache = true) => {
+    require: function (options) {
+        let { moduleName, callingModuleName, cache } = options;
+        if (!moduleName){
+            moduleName = options;
+            cache = true;
+        }
         let required = null;
         if (cache){
-            required = require(moduleName);
+            required = originalRequire.apply(this, [moduleName]);
         } else {
             const resolvedModuleName = require.resolve(moduleName);
             if (resolvedModuleName){
@@ -14,11 +21,13 @@ module.exports = {
             }
         }
         if (required){
-            let parent = module.parent;
-            while(parent.filename.indexOf(callingModuleName) === -1){
-                parent = parent.parent;
+            if (callingModuleName){
+                let parent = module.parent;
+                while(parent.filename.indexOf(callingModuleName) === -1){
+                    parent = parent.parent;
+                }
+                module.exports.cache.add( moduleName, { callingModuleName, callingModuleFileName: parent.filename });
             }
-            module.exports.cache.add( moduleName, { callingModuleName, callingModuleFileName: parent.filename });
             return required;
         }
     },
@@ -36,4 +45,4 @@ module.exports = {
         }
     }
 };
-module.require = module.exports.require;
+Module.prototype.require = module.exports.require;
