@@ -1,6 +1,6 @@
 const comonentConfig = require("./component.config.js");
 (async() => { 
-    if (!comonentConfig.host){
+    if (!comonentConfig){
         throw "Test Failed";
     }
     process.exit();

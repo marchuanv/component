@@ -1,5 +1,7 @@
 {
   "name": "component.config",
+  "hostname": "localhost",
+  "port": 3000,
   "version": "1.0.0",
   "description": "module for configuring a component",
   "main": "component.config.js",
@@ -20,11 +22,5 @@
     "url": "https://github.com/marchuanv/component.config/issues"
   },
   "homepage": "https://github.com/marchuanv/component.config#readme",
-  "dependencies": {},
-  "component": {
-    "host": {
-      "hostname": "localhost",
-      "port": 3000
-    }
-  }
+  "dependencies": {}
 }
