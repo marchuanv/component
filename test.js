@@ -1,12 +1,16 @@
 const comonent = require("./component.js");
+comonent.require("component.delegate", { gitUsername: "marchuanv" });
 (async() => {
+    
+    comonent.events.onRegister("component.delegate", ({ componentDelegate }) => {
+        console.log(componentDelegate);
+    });
+    // const crypto = comonent.require("crypto", "Test");
 
-    const crypto = comonent.require("crypto", "Test");
+    // const test = comonent.getDependency("crypto")
 
-    const test = comonent.getDependency("crypto")
-
-    require("./package.json",false);
-    process.exit();
+    // require("./package.json",false);
+    // process.exit();
 })().catch((err)=>{
     console.error(err);
 });
