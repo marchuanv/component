@@ -1,85 +1,8 @@
 const npm = require("npm");
 const _cache = [];
 
-// const findModules = (parent, module, checkedModules) => {
-//     let foundModules = [];
-//     if (!checkedModules){
-//         checkedModules = [];
-//     }
-//     if (parent.filename.indexOf(module) > -1) {
-//         foundModules.push(parent);
-//         return foundModules;
-//     }
-//     if (checkedModules.find(m => m.filename === parent.filename)){
-//         return foundModules;
-//     }
-//     checkedModules.push(parent);
-//     for(const child of parent.children) {
-//         foundModules = foundModules.concat(findModules(child, module, checkedModules));
-//     };
-//     return foundModules;
-// }
-
-
-// const findPackages = (checkedPages) => {
-//     let foundPackages = [];
-//     if (!checkedPages){
-//         checkedPages = [];
-//     }
-
-//     if (parent.filename.indexOf(module) > -1) {
-//         foundModules.push(parent);
-//         return foundModules;
-//     }
-//     if (checkedModules.find(m => m.filename === parent.filename)){
-//         return foundModules;
-//     }
-//     checkedModules.push(parent);
-//     for(const child of parent.children) {
-//         foundModules = foundModules.concat(findModules(child, module, checkedModules));
-//     };
-//     return foundModules;
-// }
-
-// require: function (options) {
-//     lock = true;
-//     setTimeout(() => {
-//         lock = false;
-//     },1000);
-//     let { moduleName, callingModule, cache } = options;
-//     if (!moduleName){
-//         moduleName = options;
-//         cache = true;
-//     }
-//     let required = null;
-//     if (cache){
-//         required = originalRequire.apply(this, [moduleName]);
-//     } else {
-//         const resolvedModuleName = require.resolve(moduleName);
-//         if (resolvedModuleName){
-//             delete require.cache[resolvedModuleName];
-//             required = require(moduleName);
-//         } else {
-//             throw new Error(`could not resolve ${moduleName}`);
-//         }
-//     }
-//     if (callingModule){
-//         let rootMod;
-//         let mod = module;
-//         while(mod){
-//             rootMod = mod;
-//             mod = mod.parent;
-//         };
-//         const foundModules = findModules(rootMod, moduleName);
-//         for(const mod of foundModules){
-//             if (!mod.parentSet){
-//                 mod.parent = callingModule;
-//                 mod.parentSet = true;
-//             }
-//         };
-//     }
-//     return required;
-// },
+const path = require("path");
+const fs = require('fs');
 
 const installModule = (moduleName) => {
     return new Promise((resolve) => {
@@ -103,10 +26,14 @@ const formatModuleName = (moduleName) => {
 }
 
 const knownCompponents = [];
+const requiredModules = [];
 const eventRegister = [];
 module.exports = {
     require: (moduleName, { gitUsername }) => {
         return new Promise(async (resolve) => {
+            if (requiredModules.find(modName => modName === moduleName)){
+                return resolve();
+            }
             let moduleToInstall =  moduleName;
             if (gitUsername){
                 moduleToInstall = `git+https://github.com/${gitUsername}/${moduleName}.git`;
@@ -114,7 +41,18 @@ module.exports = {
             await installModule(moduleToInstall);
             const resolvedPath = require.resolve(moduleName);
             if (resolvedPath){
-                const package = require(`${resolvedPath.replace(`${moduleName}.js`,"package.json")}`);
+                let package = {};
+                let _path = resolvedPath.replace(`${moduleName}.js`,"package.json");
+                if (fs.existsSync(_path)) {
+                    package = require(path);
+                } else {
+                    while(!package){
+                        const dir = path.dirname(path);
+                        package = require(`${resolvedPath.replace(`${moduleName}.js`,"package.json")}`);
+                        
+                    };
+                }
+                
                 let dependencies = [];
                 if (package.dependencies){
                     dependencies = dependencies.concat(Object.getOwnPropertyNames(package.dependencies));
@@ -133,9 +71,10 @@ module.exports = {
                     }
                 }
                 results[formatModuleName(moduleName)] = require(moduleName);
+                requiredModules.push(moduleName);
                 for(const dependency of dependencies) {
                     const dependencyVal = package.dependencies[dependency];
-                    module.events.onRegister(dependency,(res) => {
+                    module.exports.events.onRegister(dependency,(res) => {
                         results[formatModuleName(dependency)] = res;
                     });
                     module.exports.require(dependency, { gitUsername: dependencyVal.indexOf("git") > -1 });
