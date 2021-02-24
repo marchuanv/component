@@ -14,6 +14,19 @@ module.exports = (() => {
     }
     const { name, hostname, port } = moduleConfig;
     loadedComponents.push({ modulename: name, hostname, port });
-    
-    return { name, hostname, port };
+    return { 
+        name, 
+        hostname, 
+        port,
+        dependencies: () => {
+            const matchingComponents = [];
+            for(const dependency in moduleConfig.dependencies){
+                const matchingComponent = loadedComponents.find(c => c.modulename === dependency);
+                if (matchingComponent){
+                    matchingComponents.push(matchingComponent);
+                }
+            };
+            return matchingComponents;
+        }
+    };
 })();
