@@ -24,7 +24,6 @@
   "homepage": "https://github.com/marchuanv/component#readme",
   "dependencies": {
     "component.delegate": "github:marchuanv/component.delegate",
-    "npm": "^7.5.6",
-    "utils": "github:marchuanv/utils"
+    "npm": "^7.5.6"
   }
 }

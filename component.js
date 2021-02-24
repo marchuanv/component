@@ -1,28 +1,24 @@
-const Module = require('module');
 const npm = require("npm");
-const path = require("path");
-const fs = require('fs');
-const originalRequire = Module.prototype.require;
 const _cache = [];
 
-const findModules = (parent, module, checkedModules) => {
-    let foundModules = [];
-    if (!checkedModules){
-        checkedModules = [];
-    }
-    if (parent.filename.indexOf(module) > -1) {
-        foundModules.push(parent);
-        return foundModules;
-    }
-    if (checkedModules.find(m => m.filename === parent.filename)){
-        return foundModules;
-    }
-    checkedModules.push(parent);
-    for(const child of parent.children) {
-        foundModules = foundModules.concat(findModules(child, module, checkedModules));
-    };
-    return foundModules;
-}
+// const findModules = (parent, module, checkedModules) => {
+//     let foundModules = [];
+//     if (!checkedModules){
+//         checkedModules = [];
+//     }
+//     if (parent.filename.indexOf(module) > -1) {
+//         foundModules.push(parent);
+//         return foundModules;
+//     }
+//     if (checkedModules.find(m => m.filename === parent.filename)){
+//         return foundModules;
+//     }
+//     checkedModules.push(parent);
+//     for(const child of parent.children) {
+//         foundModules = foundModules.concat(findModules(child, module, checkedModules));
+//     };
+//     return foundModules;
+// }
 
 
 // const findPackages = (checkedPages) => {
@@ -173,4 +169,3 @@ module.exports = {
         }
     }
 };
-Module.prototype.require = module.exports.require;
