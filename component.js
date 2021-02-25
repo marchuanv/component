@@ -98,12 +98,25 @@ module.exports = {
     },
     events: {
         on: ({ moduleName, eventName, eventType }, callback) => {
-            let event = events[moduleName];
-            if (!event) {
-                event = { register: {}, module: {} };
-                events[moduleName] = event;
+            if (eventType && !moduleName && !eventName){
+                const _events = Object.getOwnPropertyNames(events)
+                    .filter( modName => events[modName][eventType] )
+                    .map( modName => events[modName][eventType] );
+                for(const event of _events){
+                    const eventName = Object.getOwnPropertyNames(event)[0];
+                    event[eventName].push(callback);
+                };
+            } else {
+                let event = events[moduleName];
+                if (!event) {
+                    event = { register: {}, module: {} };
+                    events[moduleName] = event;
+                }
+                if (!event[eventType][ eventName || moduleName ]){
+                    event[eventType][ eventName || moduleName ] = [];
+                }
+                event[eventType][ eventName || moduleName ].push(callback);
             }
-            event[eventType][ eventName || moduleName ] = callback;
         },
         find: ({ moduleName, eventName, eventType }) => {
             let event = events[moduleName];

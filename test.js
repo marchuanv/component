@@ -5,6 +5,10 @@ comonent.require("component.delegate", { gitUsername: "marchuanv" });
     comonent.events.on( { moduleName: "component.delegate", eventType: "register" }, ({ componentDelegate }) => {
         console.log(componentDelegate);
     });
+
+    comonent.events.on( { eventType: "register" }, ({ module }) => {
+        console.log(componentDelegate);
+    });
     // const crypto = comonent.require("crypto", "Test");
 
     // const test = comonent.getDependency("crypto")
