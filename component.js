@@ -1,6 +1,4 @@
 const npm = require("npm");
-const _cache = [];
-
 const path = require("path");
 const fs = require('fs');
 
@@ -38,7 +36,7 @@ const formatModuleName = (moduleName) => {
 
 const knownCompponents = [];
 const requiredModules = [];
-const eventRegister = [];
+const events = {};
 module.exports = {
     require: (moduleName, { gitUsername }) => {
         return new Promise(async (resolve) => {
@@ -88,9 +86,9 @@ module.exports = {
                     });
                     module.exports.require(dependency, { gitUsername: dependencyVal.indexOf("git") > -1 });
                 };
-                const event = eventRegister.find(e => e.moduleName === moduleName);
-                if (event){
-                    await event.callback(results);
+                const callback = module.exports.find({ moduleName, eventType: "register" });
+                if (callback){
+                    await callback(results);
                 }
             } else {
                 throw new Error(`failed to register ${moduleName}, could not resolve ${moduleName}, see npm logs it might not be installed.`);
@@ -98,22 +96,20 @@ module.exports = {
             resolve();
         });
     },
-    cache: {
-        add: ( name, value) => {
-            const existingItem = module.exports.cache.find(name);
-            if (existingItem){
-                existingItem.value = value;
-            } else {
-                _cache.push({ name, value });
-            }
-        },
-        find: (name) => {
-            return _cache.find( i => i.name === name);
-        }
-    },
     events: {
-        onRegister: (moduleName, callback) => {
-            eventRegister.push({ moduleName, callback });
+        on: ({ moduleName, eventName, eventType }, callback) => {
+            let event = events[moduleName];
+            if (!event) {
+                event = { register: {}, module: {} };
+                events[moduleName] = event;
+            }
+            event[eventType][ eventName || moduleName ] = callback;
+        },
+        find: ({ moduleName, eventName, eventType }) => {
+            let event = events[moduleName];
+            if (event) {
+                return event[eventType][eventName || moduleName];
+            }
         }
     }
 };

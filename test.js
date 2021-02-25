@@ -2,7 +2,7 @@ const comonent = require("./component.js");
 comonent.require("component.delegate", { gitUsername: "marchuanv" });
 (async() => {
     
-    comonent.events.onRegister("component.delegate", ({ componentDelegate }) => {
+    comonent.events.on( { moduleName: "component.delegate", eventType: "register" }, ({ componentDelegate }) => {
         console.log(componentDelegate);
     });
     // const crypto = comonent.require("crypto", "Test");
