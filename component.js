@@ -1,27 +1,10 @@
-const npm = require("npm");
+const {PluginManager} = require("live-plugin-manager");
 const path = require("path");
 const fs = require('fs');
 
-const installModule = (moduleName) => {
-    return new Promise((resolve, reject) => {
-        let errorMsg = "";
-        npm.load( (err) => {
-            if (err){
-                errorMsg = err.message;
-                return reject(errorMsg);
-            }
-            npm.commands.install([moduleName],(err) => {
-                if (err){
-                    errorMsg = err.stderr;
-                    return reject(errorMsg);
-                }
-                resolve();           
-            });
-            npm.on("log", function (message) {
-                console.log(message);
-            });
-        });
-    });
+const manager = new PluginManager({pluginsPath: path.join(__dirname,"node_modules")});
+const installModule = async (moduleName) => {
+    await manager.installFromGithub(moduleName);
 };
 
 const capitalize = (s) => {
@@ -47,8 +30,8 @@ module.exports = {
                 return resolve();
             }
             let moduleToInstall =  moduleName;
-            if (gitUsername){
-                moduleToInstall = `git+https://github.com/${gitUsername}/${moduleName}.git`;
+            if (gitUsername) {
+                moduleToInstall = `${gitUsername}/${moduleName}`;
             }
             await installModule(moduleToInstall);
             const resolvedPath = require.resolve(moduleName);
