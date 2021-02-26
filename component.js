@@ -65,13 +65,6 @@ module.exports = {
                 }
                 results[formatModuleName(moduleName)] = require(moduleName);
                 requiredModules.push(moduleName);
-                for(const dependency of dependencies) {
-                    const dependencyVal = package.dependencies[dependency];
-                    module.exports.events.on( { moduleName: dependency, eventType: "register" }, (res) => {
-                        results[formatModuleName(dependency)] = res;
-                    });
-                    module.exports.require(dependency, { gitUsername: dependencyVal.indexOf("git") > -1 });
-                };
                 const callback = module.exports.events.find({ moduleName, eventType: "register" });
                 if (callback){
                     await callback(results);
