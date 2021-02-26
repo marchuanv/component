@@ -23,10 +23,7 @@ const formatModuleName = (moduleName) => {
 
 const knownCompponents = [];
 const requiredModules = [];
-const _events = {
-    register: {},
-    module: {}
-};
+const _events = { };
 module.exports = {
     require: (moduleName, { gitUsername }) => {
         return new Promise(async (resolve) => {
@@ -54,12 +51,13 @@ module.exports = {
                 if (package.dependencies){
                     dependencies = dependencies.concat(Object.getOwnPropertyNames(package.dependencies));
                 }
-                const results = {};
+                const moduleResults = {};
+                const globalResults = {};
                 const { name, hostname, port } = package;
                 if (moduleName.startsWith("component")){
-                    results["hostname"] = hostname;
-                    results["port"] = port;
-                    results["name"] = name;
+                    moduleResults["hostname"] = hostname;
+                    moduleResults["port"] = port;
+                    moduleResults["name"] = name;
                     if (!hostname || !port){
                         throw new Error(`failed to register ${moduleName}, package.json requires hostname and port configuration`);
                     }
@@ -67,11 +65,16 @@ module.exports = {
                         knownCompponents.push({ name, hostname, port })
                     }
                 }
-                results[formatModuleName(moduleName)] = require(moduleName);
+                moduleResults[formatModuleName(moduleName)] = require(moduleName);
+                globalResults["module"] = moduleResults;
                 requiredModules.push(moduleName);
-                const callback = module.exports.events.find({ moduleName, eventType: "register" });
-                if (callback){
-                    await callback(results);
+                const callbacks = module.exports.events.find({ moduleName, eventType: "register" });
+                for(const callback of callbacks){
+                    await callback(moduleResults);
+                }
+                const globalCallbacks = module.exports.events.find({ moduleName: "global", eventType: "register" });
+                for(const callback of globalCallbacks){
+                    await callback(globalResults);
                 }
             } else {
                 throw new Error(`failed to register ${moduleName}, could not resolve ${moduleName}, see npm logs it might not be installed.`);
@@ -81,26 +84,18 @@ module.exports = {
     },
     events: {
         on: ({ moduleName, eventName, eventType }, callback) => {
-            if (_events[eventType]) {
-                if (!moduleName) {
-                    moduleName = "global";
-                }
-                let event = _events[eventType][moduleName] || {};
-                if (utils.isEmptyObject(event)) {
-                    event[ eventName || moduleName ] = [];
-                    _events[eventType] = event;
-                }
-                const callbacks = event [ eventName || moduleName ];
-                if (callbacks) {
-                    callbacks.push(callback);
-                }
+            let name = [ eventName || moduleName || "global" ];
+            if (!_events[name]) {
+                _events[name] = [];
             }
+            if (!_events[name][eventType]) {
+                _events[name][eventType] = [];
+            }
+            _events[name][eventType].push(callback);;
         },
         find: ({ moduleName, eventName, eventType }) => {
-            let event = events[eventType][moduleName];
-            if (event) {
-                return event[eventType][eventName || moduleName];
-            }
+            let name = [ eventName || moduleName || "global" ];
+            return _events[name][eventType];
         }
     }
 };
