@@ -4,13 +4,16 @@ const fs = require('fs');
 
 const installModule = (moduleName) => {
     return new Promise((resolve, reject) => {
+        let errorMsg = "";
         npm.load( (err) => {
             if (err){
-                return reject(err);
+                errorMsg = err.message;
+                return reject(errorMsg);
             }
             npm.commands.install([moduleName],(err) => {
                 if (err){
-                    return reject(err.stderr);
+                    errorMsg = err.stderr;
+                    return reject(errorMsg);
                 }
                 resolve();           
             });
