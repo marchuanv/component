@@ -72,7 +72,7 @@ module.exports = {
                     });
                     module.exports.require(dependency, { gitUsername: dependencyVal.indexOf("git") > -1 });
                 };
-                const callback = module.exports.find({ moduleName, eventType: "register" });
+                const callback = module.exports.events.find({ moduleName, eventType: "register" });
                 if (callback){
                     await callback(results);
                 }
