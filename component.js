@@ -1,6 +1,7 @@
 const {PluginManager} = require("live-plugin-manager");
 const path = require("path");
 const fs = require('fs');
+const utils = require("utils");
 
 const manager = new PluginManager({pluginsPath: path.join(__dirname,"node_modules")});
 const installModule = async (moduleName) => {
@@ -22,7 +23,10 @@ const formatModuleName = (moduleName) => {
 
 const knownCompponents = [];
 const requiredModules = [];
-const events = {};
+const _events = {
+    register: {},
+    module: {}
+};
 module.exports = {
     require: (moduleName, { gitUsername }) => {
         return new Promise(async (resolve) => {
@@ -77,28 +81,23 @@ module.exports = {
     },
     events: {
         on: ({ moduleName, eventName, eventType }, callback) => {
-            if (eventType && !moduleName && !eventName){
-                const _events = Object.getOwnPropertyNames(events)
-                    .filter( modName => events[modName][eventType] )
-                    .map( modName => events[modName][eventType] );
-                for(const event of _events){
-                    const eventName = Object.getOwnPropertyNames(event)[0];
-                    event[eventName].push(callback);
-                };
-            } else {
-                let event = events[moduleName];
-                if (!event) {
-                    event = { register: {}, module: {} };
-                    events[moduleName] = event;
+            if (_events[eventType]) {
+                if (!moduleName) {
+                    moduleName = "global";
                 }
-                if (!event[eventType][ eventName || moduleName ]){
-                    event[eventType][ eventName || moduleName ] = [];
+                let event = _events[eventType][moduleName] || {};
+                if (utils.isEmptyObject(event)) {
+                    event[ eventName || moduleName ] = [];
+                    _events[eventType] = event;
                 }
-                event[eventType][ eventName || moduleName ].push(callback);
+                const callbacks = event [ eventName || moduleName ];
+                if (callbacks) {
+                    callbacks.push(callback);
+                }
             }
         },
         find: ({ moduleName, eventName, eventType }) => {
-            let event = events[moduleName];
+            let event = events[eventType][moduleName];
             if (event) {
                 return event[eventType][eventName || moduleName];
             }
