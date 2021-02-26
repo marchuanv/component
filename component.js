@@ -67,7 +67,7 @@ module.exports = {
                 requiredModules.push(moduleName);
                 for(const dependency of dependencies) {
                     const dependencyVal = package.dependencies[dependency];
-                    module.exports.events.onRegister(dependency,(res) => {
+                    module.exports.events.on( { moduleName: dependency, eventType: "register" }, (res) => {
                         results[formatModuleName(dependency)] = res;
                     });
                     module.exports.require(dependency, { gitUsername: dependencyVal.indexOf("git") > -1 });
