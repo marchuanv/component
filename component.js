@@ -2,11 +2,7 @@ const {PluginManager} = require("live-plugin-manager");
 const path = require("path");
 const fs = require('fs');
 const utils = require("utils");
-
 const manager = new PluginManager({pluginsPath: path.join(__dirname,"node_modules")});
-const installModule = async (moduleName) => {
-    await manager.installFromGithub(moduleName);
-};
 
 const capitalize = (s) => {
     if (typeof s !== 'string') return '';
@@ -34,7 +30,7 @@ module.exports = {
             if (gitUsername) {
                 moduleToInstall = `${gitUsername}/${moduleName}`;
             }
-            await installModule(moduleToInstall);
+            await manager.installFromGithub(moduleName);
             const resolvedPath = require.resolve(moduleName);
             if (resolvedPath){
                 let package = {};
@@ -68,14 +64,11 @@ module.exports = {
                 moduleResults[formatModuleName(moduleName)] = require(moduleName);
                 globalResults["module"] = moduleResults;
                 requiredModules.push(moduleName);
-                const callbacks = module.exports.events.find({ moduleName, eventType: "register" });
-                for(const callback of callbacks){
-                    await callback(moduleResults);
-                }
-                const globalCallbacks = module.exports.events.find({ moduleName: "global", eventType: "register" });
-                for(const callback of globalCallbacks){
+                const moduleCallbacks = module.exports.events.find({ moduleName, eventType: "register" });
+                const globalCallbacks = module.exports.events.find({ eventType: "register" });
+                for(const callback of globalCallbacks.concat(moduleCallbacks)){
                     await callback(globalResults);
-                }
+                };
             } else {
                 throw new Error(`failed to register ${moduleName}, could not resolve ${moduleName}, see npm logs it might not be installed.`);
             }
