@@ -2,7 +2,6 @@ const {PluginManager} = require("live-plugin-manager");
 const delegate = require("component.delegate");
 const path = require("path");
 const fs = require('fs');
-const utils = require("utils");
 const manager = new PluginManager({pluginsPath: path.join(__dirname,"node_modules")});
 
 const capitalize = (s) => {
@@ -20,7 +19,6 @@ const formatModuleName = (moduleName) => {
 
 const knownCompponents = [];
 const acquiredModules = [];
-const _events = { };
 module.exports = {
     require: (moduleName, { gitUsername }) => {
         return new Promise(async (resolve) => {
