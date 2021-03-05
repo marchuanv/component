@@ -1,4 +1,5 @@
 const {PluginManager} = require("live-plugin-manager");
+const delegate = require("component.delegate");
 const path = require("path");
 const fs = require('fs');
 const utils = require("utils");
@@ -18,12 +19,12 @@ const formatModuleName = (moduleName) => {
 }
 
 const knownCompponents = [];
-const requiredModules = [];
+const acquiredModules = [];
 const _events = { };
 module.exports = {
     require: (moduleName, { gitUsername }) => {
         return new Promise(async (resolve) => {
-            if (requiredModules.find(modName => modName === moduleName)){
+            if (acquiredModules.find(modName => modName === moduleName)){
                 return resolve();
             }
             let moduleToInstall =  moduleName;
@@ -48,7 +49,6 @@ module.exports = {
                     dependencies = dependencies.concat(Object.getOwnPropertyNames(package.dependencies));
                 }
                 const moduleResults = {};
-                const globalResults = {};
                 const { name, hostname, port } = package;
                 if (moduleName.startsWith("component")){
                     moduleResults["hostname"] = hostname;
@@ -62,33 +62,12 @@ module.exports = {
                     }
                 }
                 moduleResults[formatModuleName(moduleName)] = require(moduleName);
-                globalResults["module"] = moduleResults;
-                requiredModules.push(moduleName);
-                const moduleCallbacks = module.exports.events.find({ moduleName, eventType: "register" });
-                const globalCallbacks = module.exports.events.find({ eventType: "register" });
-                for(const callback of globalCallbacks.concat(moduleCallbacks)){
-                    await callback(globalResults);
-                };
+                acquiredModules.push(moduleName);
+                await delegate.call( { context: "module", name: "register" }, moduleResults[formatModuleName(moduleName)] );
             } else {
                 throw new Error(`failed to register ${moduleName}, could not resolve ${moduleName}, see npm logs it might not be installed.`);
             }
             resolve();
         });
-    },
-    events: {
-        on: ({ moduleName, eventName, eventType }, callback) => {
-            let name = [ eventName || moduleName || "global" ];
-            if (!_events[name]) {
-                _events[name] = [];
-            }
-            if (!_events[name][eventType]) {
-                _events[name][eventType] = [];
-            }
-            _events[name][eventType].push(callback);;
-        },
-        find: ({ moduleName, eventName, eventType }) => {
-            let name = [ eventName || moduleName || "global" ];
-            return _events[name][eventType];
-        }
     }
 };
