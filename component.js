@@ -29,7 +29,7 @@ module.exports = {
             if (gitUsername) {
                 moduleToInstall = `${gitUsername}/${moduleName}`;
             }
-            await manager.installFromGithub(moduleName);
+            await manager.installFromGithub(moduleToInstall);
             const resolvedPath = require.resolve(moduleName);
             if (resolvedPath){
                 let package = {};
