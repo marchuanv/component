@@ -78,9 +78,8 @@ module.exports = {
                 const requiredModule = require(moduleName);
                 moduleResults[formatModuleName(moduleName)] = requiredModule;
                 acquiredModules.push(moduleName);
-                await delegate.call( { context: "module", name: "register" }, moduleResults );
                 resolve(moduleResults);
-
+                await delegate.call( { context: "module", name: "register" }, moduleResults );
             } else {
                 reject(new Error(`failed to register ${moduleName}, could not resolve ${moduleName}, see npm logs it might not be installed.`));
             }
