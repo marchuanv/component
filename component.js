@@ -16,6 +16,23 @@ const formatModuleName = (moduleName) => {
     return name;
 };
 
+const installModule = (moduleToInstall) => {
+    return new Promise(async (resolve, reject) => {
+        exec(`npm install ${moduleToInstall}`, (error, stdout, stderr) => {
+            if (error) {
+                return reject(error.message);
+            }
+            if (stderr) {
+                if (stderr.indexOf("WARN") > -1){
+                    return resolve();
+                }
+                return reject(stderr);
+            }
+            resolve();
+        });
+    });
+};
+
 const knownCompponents = [];
 const acquiredModules = [];
 module.exports = {
@@ -28,17 +45,7 @@ module.exports = {
             if (gitUsername) {
                 moduleToInstall = `${gitUsername}/${moduleName}`;
             }
-            exec(`npm install ${moduleToInstall}`, (error, stdout, stderr) => {
-                if (error) {
-                    console.log(`error: ${error.message}`);
-                    return;
-                }
-                if (stderr) {
-                    console.log(`stderr: ${stderr}`);
-                    return;
-                }
-                console.log(`stdout: ${stdout}`);
-            });
+            await installModule(moduleToInstall);
             const resolvedPath = require.resolve(moduleName);
             if (resolvedPath){
                 let package = {};
