@@ -75,13 +75,15 @@ module.exports = {
                         knownCompponents.push({ name, hostname, port })
                     }
                 }
-                moduleResults[formatModuleName(moduleName)] = require(moduleName);
+                const requiredModule = require(moduleName);
+                moduleResults[formatModuleName(moduleName)] = requiredModule;
                 acquiredModules.push(moduleName);
                 await delegate.call( { context: "module", name: "register" }, moduleResults );
+                resolve(moduleResults);
+
             } else {
-                throw new Error(`failed to register ${moduleName}, could not resolve ${moduleName}, see npm logs it might not be installed.`);
+                reject(new Error(`failed to register ${moduleName}, could not resolve ${moduleName}, see npm logs it might not be installed.`));
             }
-            resolve();
         });
     }
 };
