@@ -23,7 +23,6 @@
   },
   "homepage": "https://github.com/marchuanv/component#readme",
   "dependencies": {
-    "live-plugin-manager": "^0.15.1",
     "component.delegate": "marchuanv/component.delegate"
   }
 }

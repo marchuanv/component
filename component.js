@@ -1,8 +1,7 @@
-const {PluginManager} = require("live-plugin-manager");
 const delegate = require("component.delegate");
 const path = require("path");
 const fs = require('fs');
-const manager = new PluginManager({pluginsPath: path.join(__dirname,"node_modules")});
+const { exec } = require("child_process");
 
 const capitalize = (s) => {
     if (typeof s !== 'string') return '';
@@ -15,7 +14,7 @@ const formatModuleName = (moduleName) => {
         name = name[0] + capitalize(name[1]);
     }
     return name;
-}
+};
 
 const knownCompponents = [];
 const acquiredModules = [];
@@ -29,7 +28,17 @@ module.exports = {
             if (gitUsername) {
                 moduleToInstall = `${gitUsername}/${moduleName}`;
             }
-            await manager.installFromGithub(moduleToInstall);
+            exec(`npm install ${moduleToInstall}`, (error, stdout, stderr) => {
+                if (error) {
+                    console.log(`error: ${error.message}`);
+                    return;
+                }
+                if (stderr) {
+                    console.log(`stderr: ${stderr}`);
+                    return;
+                }
+                console.log(`stdout: ${stdout}`);
+            });
             const resolvedPath = require.resolve(moduleName);
             if (resolvedPath){
                 let package = {};
