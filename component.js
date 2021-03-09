@@ -78,7 +78,6 @@ module.exports = {
                 }
                 const requiredModule = require(moduleName);
                 moduleResults[formatModuleName(moduleName)] = requiredModule;
-                acquiredModules.push(moduleName);
                 resolve(moduleResults);
                 await delegate.call( { context: "module", name: "register" }, moduleResults );
             } else {
