@@ -9,10 +9,12 @@ const capitalize = (s) => {
 }
 
 const formatModuleName = (moduleName) => {
-    let name = moduleName.split(".");
-    if (Array.isArray(name) && name.length > 0) {
-        name = name[0] + capitalize(name[1]);
-    }
+    let parts = moduleName.split(".");
+    let name = parts[0];
+    delete parts[0];
+    for(const part of parts){
+        name = name + capitalize(part);
+    };
     return name;
 };
 
