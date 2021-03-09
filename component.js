@@ -33,19 +33,23 @@ const installModule = (moduleToInstall) => {
     });
 };
 
-const knownCompponents = [];
-const acquiredModules = [];
 module.exports = {
-    require: (moduleName, { gitUsername }) => {
+    require: ( moduleName, { gitUsername } ) => {
         return new Promise(async (resolve) => {
-            if (acquiredModules.find(modName => modName === moduleName)){
-                return resolve();
-            }
+            
             let moduleToInstall =  moduleName;
-            if (gitUsername) {
-                moduleToInstall = `${gitUsername}/${moduleName}`;
+            
+            const installedNodeModules = []; 
+            fs.readdirSync(path.join(__dirname, "../")).forEach(dirName => {
+                installedNodeModules.push(dirName);
+            });
+
+            if (!installedNodeModules.find(modName => modName === moduleName)){
+                if (gitUsername) {
+                    moduleToInstall = `${gitUsername}/${moduleName}`;
+                }
+                await installModule(moduleToInstall);
             }
-            await installModule(moduleToInstall);
             const resolvedPath = require.resolve(moduleName);
             if (resolvedPath){
                 let package = {};
