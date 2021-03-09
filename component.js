@@ -75,9 +75,6 @@ module.exports = {
                     if (!hostname || !port){
                         throw new Error(`failed to register ${moduleName}, package.json requires hostname and port configuration`);
                     }
-                    if (!knownCompponents.find(m => m.name === name)){
-                        knownCompponents.push({ name, hostname, port })
-                    }
                 }
                 const requiredModule = require(moduleName);
                 moduleResults[formatModuleName(moduleName)] = requiredModule;
