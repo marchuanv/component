@@ -1,7 +1,6 @@
 const path = require("path");
 const fs = require('fs');
 const { exec } = require("child_process");
-const component = require("../../component");
 
 const capitalize = (s) => {
     if (typeof s !== 'string') return '';
