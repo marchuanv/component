@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require('fs');
 const { exec } = require("child_process");
 const Delegate = require("component.delegate");
+const { dirname } = require("path");
 
 const capitalize = (s) => {
     if (typeof s !== 'string') return '';
@@ -26,7 +27,11 @@ const installModule = ({ gitUsername, requiredModuleName }) => {
         }
         exec(`npm install ${moduleToInstall} --no-save`, () => {
             const id = setInterval(() => {
-                const resolvedPath = path.join(__dirname,"node_modules", requiredModuleName);
+                let resolvedPath = path.join(__dirname,"node_modules", requiredModuleName);
+                if (__dirname.indexOf("node_modules") > -1){
+                    resolvedPath = path.join(__dirname,"../");
+                    resolvedPath = path.join(resolvedPath, requiredModuleName);
+                }
                 if (fs.existsSync(resolvedPath)){
                     clearInterval(id);
                     const packagePath = path.join(resolvedPath,"package.json");
@@ -71,7 +76,7 @@ module.exports = function({ moduleName, gitUsername, parentModuleName }) {
 
     delegates.push(new Delegate({
         context: moduleName,
-        callbackContext: parentModuleName
+        callbackContext: parentModuleName || "None"
     }));
 
     const requireExt = (requiredModuleName) => {
