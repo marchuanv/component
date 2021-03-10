@@ -87,7 +87,7 @@ module.exports = function(moduleName) {
                 }
                 await installModule(moduleToInstall);
             }
-
+            let moduleResults = {};
             const resolvedPath = require.resolve(moduleName);
             if (resolvedPath){
                 const { name, hostname, port } = getPackage(moduleName, resolvedPath);
