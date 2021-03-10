@@ -48,23 +48,16 @@ const getPackage = (moduleName, packageDir) => {
 
 const knownComponents = [];
 
-module.exports = function(moduleName) {
+module.exports = function({ moduleName, parentModuleName }) {
 
     this.name = moduleName;
-
-    const lastAddedKnownComponent = knownComponents[knownComponents.length-1];
-    if (lastAddedKnownComponent){
-        lastAddedKnownComponent.delegate = new Delegate( { 
-            context: lastAddedKnownComponent.name,
-            callbackContext: this.name
-        });
-    }
     knownComponents.push(this);
     
     this.delegate = new Delegate( { 
-        context: this.name,
-        callbackContext: "component"
+        context: moduleName,
+        callbackContext: parentModuleName
     });
+    
     this.require = ( moduleName, { gitUsername } ) => {
         return new Promise(async (resolve) => {
             let resolvedPath = require.resolve(moduleName);
