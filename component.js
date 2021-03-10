@@ -60,7 +60,6 @@ const delegates = [];
 module.exports = function({ moduleName, gitUsername, parentModuleName }) {
     
     this.name = moduleName;
-    let moduleInstance;
     this.delegate = {
         call: async ({ name, wildcard }, params) => {
             for(const del of delegates.filter(d => d.context === parentModuleName)){
@@ -92,6 +91,8 @@ module.exports = function({ moduleName, gitUsername, parentModuleName }) {
                 info["hostname"]           = hostname;
                 info["port"]               = port;
                 info["name"]               = name;
+                info["friendlyName"]       = formatModuleName(name);
+                info["modulePath"]         = resolvedPath;
                 if (!hostname || !port){
                     throw new Error(`failed to register ${requiredModuleName}, package.json requires hostname and port configuration`);
                 }
@@ -102,11 +103,11 @@ module.exports = function({ moduleName, gitUsername, parentModuleName }) {
 
     this.getInstance = () => {
         return new Promise(async (resolve) => {
-            const info = await getModuleInfo(moduleName);
-            const instance = require(info.name);
+            const moduleInfo = await getModuleInfo(moduleName);
+            const instance = require(moduleInfo.modulePath);
             const results = {};
-            results[info.name] = instance;
-            results["config"] = info;
+            results[moduleInfo.friendlyName] = instance;
+            results["config"] = moduleInfo;
             await resolve(results);
             await this.delegate.call( { name: "acquired" }, results );
         });
