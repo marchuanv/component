@@ -104,9 +104,11 @@ module.exports = function({ moduleName, gitUsername, parentModuleName }) {
         return new Promise(async (resolve) => {
             const info = await getModuleInfo(moduleName);
             const instance = require(info.name);
-            await resolve(instance);
-            await this.delegate.call( { name: "acquired" }, instance );
-
+            const results = {};
+            results[info.name] = instance;
+            results["config"] = info;
+            await resolve(results);
+            await this.delegate.call( { name: "acquired" }, results );
         });
     };
 
