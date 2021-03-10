@@ -61,28 +61,28 @@ module.exports = function({ moduleName }) {
         callbackContext: parentModuleName || "none"
     });
     
-    this.require = ( moduleName, { gitUsername } ) => {
+    this.require = ( requiredModuleName, { gitUsername } ) => {
         return new Promise(async (resolve) => {
             if (!resolvedPath){
                 let moduleToInstall;
                 if (gitUsername) {
-                    moduleToInstall = `${gitUsername}/${moduleName}`;
+                    moduleToInstall = `${gitUsername}/${requiredModuleName}`;
                 }
                 await installModule(moduleToInstall);
-                resolvedPath = require.resolve(moduleName);
+                resolvedPath = require.resolve(requiredModuleName);
             }
             let moduleResults = {};
-            const { name, hostname, port } = getPackage(moduleName, resolvedPath);
-            if (moduleName.startsWith("component")){
+            const { name, hostname, port } = getPackage(requiredModuleName, resolvedPath);
+            if (requiredModuleName.startsWith("component")){
                 moduleResults["hostname"] = hostname;
                 moduleResults["port"] = port;
                 moduleResults["name"] = name;
                 if (!hostname || !port){
-                    throw new Error(`failed to register ${moduleName}, package.json requires hostname and port configuration`);
+                    throw new Error(`failed to register ${requiredModuleName}, package.json requires hostname and port configuration`);
                 }
             }
-            const requiredModule = require(moduleName);
-            moduleResults[formatModuleName(moduleName)] = requiredModule;
+            const requiredModule = require(requiredModuleName);
+            moduleResults[formatModuleName(requiredModuleName)] = requiredModule;
             await resolve(moduleResults);
             for(const knownComponent of knownComponents){
                 await knownComponent.delegate.call( { name: "acquired" }, moduleResults );
