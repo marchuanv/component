@@ -34,11 +34,32 @@ const installModule = (moduleToInstall) => {
     });
 };
 
+const getPackage = (moduleName) => {
+    let _path = resolvedPath.replace(`${moduleName}.js`,"package.json");
+    while(!fs.existsSync(_path)){
+        const dirPath = path.dirname(_path);
+        const dirName = path.basename(dirPath);
+        const indexPos = dirPath.lastIndexOf(dirName);
+        _path = path.join(dirPath.substring(0, indexPos-1),"package.json");
+    };
+    return require(_path);
+};
+
 module.exports = {
-    register: (module) => {
+    register: (module, parentModuleName) => {
 
-        
+        if (module.Delegate){
 
+        }
+
+        // const package = getPackage(module.name);
+        // let dependencies = [];
+        // if (package.dependencies){
+        //     dependencies = dependencies.concat(Object.getOwnPropertyNames(package.dependencies));
+        // }
+        // for(const dep of dependencies){
+
+        // };
     },
     require: ( moduleName, { gitUsername } ) => {
         return new Promise(async (resolve) => {
@@ -58,20 +79,7 @@ module.exports = {
             }
             const resolvedPath = require.resolve(moduleName);
             if (resolvedPath){
-                let package = {};
-                let _path = resolvedPath.replace(`${moduleName}.js`,"package.json");
-                while(!fs.existsSync(_path)){
-                    const dirPath = path.dirname(_path);
-                    const dirName = path.basename(dirPath);
-                    const indexPos = dirPath.lastIndexOf(dirName);
-                    _path = path.join(dirPath.substring(0, indexPos-1),"package.json");
-                };
-                package = require(_path);
-                
-                let dependencies = [];
-                if (package.dependencies){
-                    dependencies = dependencies.concat(Object.getOwnPropertyNames(package.dependencies));
-                }
+                let package = getPackage(moduleName);
                 const moduleResults = {};
                 const { name, hostname, port } = package;
                 if (moduleName.startsWith("component")){
