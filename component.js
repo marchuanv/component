@@ -57,9 +57,8 @@ const canResolveModule = (moduleName) => {
 
 const delegates = [];
 
-module.exports = function() {
-    
-    this.delegate = {
+module.exports = {
+    delegate: {
         call: async ({ name, wildcard }, params) => {
             for(const del of delegates.filter(d => d.context === parentModuleName)){
                 await del.call({ name, wildcard }, params);
@@ -70,9 +69,8 @@ module.exports = function() {
                 await del.register({ name, overwriteDelegate }, callback);
             };
         }
-    };
-
-    const getModuleInfo = ({ moduleName, gitUsername }) => {
+    },
+    getModuleInfo: ({ moduleName, gitUsername }) => {
         return new Promise(async (resolve) => {
             let resolvedPath = canResolveModule(moduleName);
             let packagePath = (resolvedPath || "" ).replace(`${moduleName}.js`,"package.json");
@@ -93,9 +91,8 @@ module.exports = function() {
             }
             await resolve(info);
         });
-    };
-
-    this.getInstance = ({ moduleName, gitUsername, parentModuleName }) => {
+    },
+    getInstance: ({ moduleName, gitUsername, parentModuleName }) => {
         return new Promise(async (resolve) => {
             const moduleInfo = await getModuleInfo({ moduleName, gitUsername });
 
@@ -112,6 +109,5 @@ module.exports = function() {
             await this.delegate.call( { name: "acquired" }, results );
             
         });
-    };
-
+    }
 };
