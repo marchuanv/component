@@ -1,12 +1,9 @@
 let Component = require("./component.js");
 (async() => {
-    
-    const component1 = new Component({ moduleName: "Bob" });
-    const component2 = new Component({ moduleName: "Susan" });
+    const component = new Component({ moduleName: "component.test", gitUsername: "marchuanv" });
+    await component.ready();
 
-
-    
-
+    console.log(component);
 
 })().catch((err)=>{
     console.error(err);

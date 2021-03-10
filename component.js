@@ -18,78 +18,101 @@ const formatModuleName = (moduleName) => {
     return name;
 };
 
-const installModule = (moduleToInstall) => {
+const installModule = ({ gitUsername, requiredModuleName }) => {
     return new Promise(async (resolve, reject) => {
-        exec(`npm install ${moduleToInstall}`, (error, stdout, stderr) => {
-            if (error) {
-                return reject(error.message);
-            }
-            if (stderr) {
-                if (stderr.indexOf("WARN") > -1){
-                    return resolve();
+        let moduleToInstall = requiredModuleName;
+        if (gitUsername) {
+            moduleToInstall = `${gitUsername}/${requiredModuleName}`;
+        }
+        exec(`npm install ${moduleToInstall} --no-save`, () => {
+            const id = setInterval(() => {
+                const resolvedPath = path.join(__dirname,"node_modules", requiredModuleName);
+                if (fs.existsSync(resolvedPath)){
+                    clearInterval(id);
+                    const packagePath = path.join(resolvedPath,"package.json");
+                    const package = require(packagePath);
+                    resolve({
+                        resolvedPath: path.join(resolvedPath,package.main),
+                        packagePath
+                    });
                 }
-                return reject(stderr);
-            }
-            resolve();
+            },100);
         });
     });
 };
 
-const getPackage = (moduleName, packageDir) => {
-    let _path = packageDir.replace(`${moduleName}.js`,"package.json");
-    while(!fs.existsSync(_path)){
-        const dirPath = path.dirname(_path);
-        const dirName = path.basename(dirPath);
-        const indexPos = dirPath.lastIndexOf(dirName);
-        _path = path.join(dirPath.substring(0, indexPos-1),"package.json");
-    };
-    return require(_path);
+const canResolveModule = (moduleName) => {
+    try {
+        return require.resolve(moduleName);
+    } catch(err) {
+        console.log(err);
+        return false;
+    }
 };
 
-const knownComponents = [];
-
-module.exports = function({ moduleName }) {
-
-    this.name = moduleName;
-    knownComponents.push(this);
-
-    let resolvedPath = require.resolve(moduleName);
-    if (!resolvedPath){
-        resolvedPath = __dirname;
-    }
-    const { parentModuleName } = getPackage(moduleName, resolvedPath);
-    
-    this.delegate = new Delegate({
-        context: moduleName,
-        callbackContext: parentModuleName || "none"
-    });
-    
-    this.require = ( requiredModuleName, { gitUsername } ) => {
-        return new Promise(async (resolve) => {
+module.exports = function({ moduleName, gitUsername }) {
+    let isReady = false;
+    const requireExt = (requiredModuleName) => {
+        return new Promise(async (resolve, reject) => {
+            let resolvedPath = canResolveModule(requiredModuleName);
+            let packagePath = (resolvedPath || "" ).replace(`${moduleName}.js`,"package.json");
             if (!resolvedPath){
-                let moduleToInstall;
-                if (gitUsername) {
-                    moduleToInstall = `${gitUsername}/${requiredModuleName}`;
-                }
-                await installModule(moduleToInstall);
-                resolvedPath = require.resolve(requiredModuleName);
+               ( { resolvedPath, packagePath } = await installModule({gitUsername,requiredModuleName}));
             }
+            const requiredModule = require(resolvedPath);
             let moduleResults = {};
-            const { name, hostname, port } = getPackage(requiredModuleName, resolvedPath);
+            const { name, hostname, port, parentDependencies } = require(packagePath);
             if (requiredModuleName.startsWith("component")){
-                moduleResults["hostname"] = hostname;
-                moduleResults["port"] = port;
-                moduleResults["name"] = name;
+                moduleResults["hostname"]           = hostname;
+                moduleResults["port"]               = port;
+                moduleResults["name"]               = name;
+                moduleResults["parentDependencies"] = parentDependencies;
+
+                const delegates = [];
+                for(const parentDep in parentDependencies){
+                    delegates.push(new Delegate({
+                        context: moduleName,
+                        callbackContext: parentDep
+                    }));
+                };
+                this.delegate = {
+                    call: ({ name, wildcard }, params) => {
+                        for(const del of delegates){
+                            del.call({ name, wildcard }, params);
+                        };
+                    },
+                    register: ({ name, overwriteDelegate = true }, params) => {
+                        for(const del of delegates){
+                            del.register({ name, overwriteDelegate }, params);
+                        };
+                    }
+                };
+
                 if (!hostname || !port){
                     throw new Error(`failed to register ${requiredModuleName}, package.json requires hostname and port configuration`);
                 }
             }
-            const requiredModule = require(requiredModuleName);
+            this.name = requiredModuleName;
             moduleResults[formatModuleName(requiredModuleName)] = requiredModule;
             await resolve(moduleResults);
-            for(const knownComponent of knownComponents){
-                await knownComponent.delegate.call( { name: "acquired" }, moduleResults );
-            };
+            await this.delegate.call( { name: "acquired" }, moduleResults );
         });
     };
+
+    requireExt(moduleName).then(() => {
+        isReady = true;
+    });
+
+    this.ready = () => {
+        return new Promise(async (resolve) => {
+            setTimeout( async () => {
+                if (isReady){
+                    resolve(isReady);
+                } else {
+                    resolve(this.ready());
+                }
+            },100)
+        });
+    };
+
 };
