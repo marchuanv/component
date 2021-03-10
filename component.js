@@ -57,9 +57,8 @@ const canResolveModule = (moduleName) => {
 
 const delegates = [];
 
-module.exports = function({ moduleName, gitUsername, parentModuleName }) {
+module.exports = function() {
     
-    this.name = moduleName;
     this.delegate = {
         call: async ({ name, wildcard }, params) => {
             for(const del of delegates.filter(d => d.context === parentModuleName)){
@@ -73,43 +72,45 @@ module.exports = function({ moduleName, gitUsername, parentModuleName }) {
         }
     };
 
-    delegates.push(new Delegate({
-        context: moduleName,
-        callbackContext: parentModuleName || "None"
-    }));
-
-    const getModuleInfo = (requiredModuleName) => {
-        return new Promise(async (resolve, reject) => {
-            let resolvedPath = canResolveModule(requiredModuleName);
+    const getModuleInfo = ({ moduleName, gitUsername }) => {
+        return new Promise(async (resolve) => {
+            let resolvedPath = canResolveModule(moduleName);
             let packagePath = (resolvedPath || "" ).replace(`${moduleName}.js`,"package.json");
             if (!resolvedPath){
-               ( { resolvedPath, packagePath } = await installModule({gitUsername,requiredModuleName}));
+               ( { resolvedPath, packagePath } = await installModule({gitUsername,moduleName}));
             }
             const { name, hostname, port } = require(packagePath);
             let info = {};
-            if (requiredModuleName.startsWith("component")){
+            if (moduleName.startsWith("component")){
                 info["hostname"]           = hostname;
                 info["port"]               = port;
                 info["name"]               = name;
                 info["friendlyName"]       = formatModuleName(name);
                 info["modulePath"]         = resolvedPath;
                 if (!hostname || !port){
-                    throw new Error(`failed to register ${requiredModuleName}, package.json requires hostname and port configuration`);
+                    throw new Error(`failed to register ${moduleName}, package.json requires hostname and port configuration`);
                 }
             }
             await resolve(info);
         });
     };
 
-    this.getInstance = () => {
+    this.getInstance = ({ moduleName, gitUsername, parentModuleName }) => {
         return new Promise(async (resolve) => {
-            const moduleInfo = await getModuleInfo(moduleName);
+            const moduleInfo = await getModuleInfo({ moduleName, gitUsername });
+
+            delegates.push(new Delegate({
+                context: moduleName,
+                callbackContext: parentModuleName || "None"
+            }));
+
             const instance = require(moduleInfo.modulePath);
             const results = {};
             results[moduleInfo.friendlyName] = instance;
             results["config"] = moduleInfo;
             await resolve(results);
             await this.delegate.call( { name: "acquired" }, results );
+            
         });
     };
 
