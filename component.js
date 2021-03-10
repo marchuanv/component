@@ -55,6 +55,29 @@ const canResolveModule = (moduleName) => {
     }
 };
 
+const getModuleInfo = ({ moduleName, gitUsername }) => {
+    return new Promise(async (resolve) => {
+        let resolvedPath = canResolveModule(moduleName);
+        let packagePath = (resolvedPath || "" ).replace(`${moduleName}.js`,"package.json");
+        if (!resolvedPath){
+            ( { resolvedPath, packagePath } = await installModule({gitUsername,moduleName}));
+        }
+        const { name, hostname, port } = require(packagePath);
+        let info = {};
+        if (moduleName.startsWith("component")){
+            info["hostname"]           = hostname;
+            info["port"]               = port;
+            info["name"]               = name;
+            info["friendlyName"]       = formatModuleName(name);
+            info["modulePath"]         = resolvedPath;
+            if (!hostname || !port){
+                throw new Error(`failed to register ${moduleName}, package.json requires hostname and port configuration`);
+            }
+        }
+        await resolve(info);
+    });
+};
+
 const delegates = [];
 
 module.exports = {
@@ -69,28 +92,6 @@ module.exports = {
                 await del.register({ name, overwriteDelegate }, callback);
             };
         }
-    },
-    getModuleInfo: ({ moduleName, gitUsername }) => {
-        return new Promise(async (resolve) => {
-            let resolvedPath = canResolveModule(moduleName);
-            let packagePath = (resolvedPath || "" ).replace(`${moduleName}.js`,"package.json");
-            if (!resolvedPath){
-               ( { resolvedPath, packagePath } = await installModule({gitUsername,moduleName}));
-            }
-            const { name, hostname, port } = require(packagePath);
-            let info = {};
-            if (moduleName.startsWith("component")){
-                info["hostname"]           = hostname;
-                info["port"]               = port;
-                info["name"]               = name;
-                info["friendlyName"]       = formatModuleName(name);
-                info["modulePath"]         = resolvedPath;
-                if (!hostname || !port){
-                    throw new Error(`failed to register ${moduleName}, package.json requires hostname and port configuration`);
-                }
-            }
-            await resolve(info);
-        });
     },
     getInstance: ({ moduleName, gitUsername, parentModuleName }) => {
         return new Promise(async (resolve) => {
