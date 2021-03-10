@@ -1,4 +1,3 @@
-const delegate = require("component.delegate");
 const path = require("path");
 const fs = require('fs');
 const { exec } = require("child_process");
@@ -36,6 +35,11 @@ const installModule = (moduleToInstall) => {
 };
 
 module.exports = {
+    register: (module) => {
+
+        
+
+    },
     require: ( moduleName, { gitUsername } ) => {
         return new Promise(async (resolve) => {
             
@@ -81,7 +85,7 @@ module.exports = {
                 const requiredModule = require(moduleName);
                 moduleResults[formatModuleName(moduleName)] = requiredModule;
                 resolve(moduleResults);
-                await delegate.call( { context: "module", name: "register" }, moduleResults );
+                // await delegate.call( { context: "module", name: "register" }, moduleResults );
             } else {
                 reject(new Error(`failed to register ${moduleName}, could not resolve ${moduleName}, see npm logs it might not be installed.`));
             }

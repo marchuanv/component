@@ -21,8 +21,5 @@
   "bugs": {
     "url": "https://github.com/marchuanv/component/issues"
   },
-  "homepage": "https://github.com/marchuanv/component#readme",
-  "dependencies": {
-    "component.delegate": "marchuanv/component.delegate"
-  }
+  "homepage": "https://github.com/marchuanv/component#readme"
 }
