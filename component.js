@@ -62,14 +62,14 @@ module.exports = function({ moduleName, gitUsername, parentModuleName }) {
     let isReady = false;
     this.name = moduleName;
     this.delegate = {
-        call: ({ name, wildcard }, params) => {
+        call: async ({ name, wildcard }, params) => {
             for(const del of delegates.filter(d => d.context === parentModuleName)){
-                del.call({ name, wildcard }, params);
+                await del.call({ name, wildcard }, params);
             };
         },
-        register: ({ name, overwriteDelegate = true }, params) => {
+        register: async ({ name, overwriteDelegate = true }, callback) => {
             for(const del of delegates.filter(d => d.context === moduleName)){
-                del.register({ name, overwriteDelegate }, params);
+                await del.register({ name, overwriteDelegate }, callback);
             };
         }
     };
