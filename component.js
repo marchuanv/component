@@ -34,8 +34,8 @@ const installModule = (moduleToInstall) => {
     });
 };
 
-const getPackage = (moduleName) => {
-    let _path = resolvedPath.replace(`${moduleName}.js`,"package.json");
+const getPackage = (moduleName, packageDir) => {
+    let _path = packageDir.replace(`${moduleName}.js`,"package.json");
     while(!fs.existsSync(_path)){
         const dirPath = path.dirname(_path);
         const dirName = path.basename(dirPath);
@@ -46,7 +46,7 @@ const getPackage = (moduleName) => {
 };
 
 module.exports = {
-    register: (module, parentModuleName) => {
+    register: async (module, parentModuleName) => {
 
         if (module.Delegate){
 
@@ -67,19 +67,27 @@ module.exports = {
             let moduleToInstall =  moduleName;
             
             const installedNodeModules = []; 
-            fs.readdirSync(path.join(__dirname, "../")).forEach(dirName => {
+            let modulesDir = path.join(__dirname, "../");
+
+            if (modulesDir.indexOf("node_modules") === -1){
+                modulesDir = path.join(__dirname, "node_modules");
+            }
+           
+            fs.readdirSync(modulesDir).forEach(dirName => {
                 installedNodeModules.push(dirName);
             });
-
-            if (!installedNodeModules.find(modName => modName === moduleName)){
+            
+            const canInstallModule = !installedNodeModules.find(modName => modName === moduleName);
+            if (canInstallModule){
                 if (gitUsername) {
                     moduleToInstall = `${gitUsername}/${moduleName}`;
                 }
                 await installModule(moduleToInstall);
             }
+
             const resolvedPath = require.resolve(moduleName);
             if (resolvedPath){
-                let package = getPackage(moduleName);
+                let package = getPackage(moduleName, resolvedPath);
                 const moduleResults = {};
                 const { name, hostname, port } = package;
                 if (moduleName.startsWith("component")){
