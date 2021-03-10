@@ -58,12 +58,13 @@ module.exports = function(moduleName) {
             context: lastAddedKnownComponent.name,
             callbackContext: this.name
         });
-    
     }
     knownComponents.push(this);
     
-    this.delegate = null;
-    
+    this.delegate = new Delegate( { 
+        context: this.name,
+        callbackContext: ""
+    });
     this.require = ( moduleName, { gitUsername } ) => {
         return new Promise(async (resolve) => {
             
