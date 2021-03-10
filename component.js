@@ -55,7 +55,7 @@ module.exports = function({ moduleName, parentModuleName }) {
     
     this.delegate = new Delegate( { 
         context: moduleName,
-        callbackContext: parentModuleName
+        callbackContext: parentModuleName || "N/A"
     });
     
     this.require = ( moduleName, { gitUsername } ) => {
