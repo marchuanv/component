@@ -59,8 +59,8 @@ const delegates = [];
 
 module.exports = function({ moduleName, gitUsername, parentModuleName }) {
     
-    let isReady = false;
     this.name = moduleName;
+    let moduleInstance;
     this.delegate = {
         call: async ({ name, wildcard }, params) => {
             for(const del of delegates.filter(d => d.context === parentModuleName)){
@@ -79,42 +79,34 @@ module.exports = function({ moduleName, gitUsername, parentModuleName }) {
         callbackContext: parentModuleName || "None"
     }));
 
-    const requireExt = (requiredModuleName) => {
+    const getModuleInfo = (requiredModuleName) => {
         return new Promise(async (resolve, reject) => {
             let resolvedPath = canResolveModule(requiredModuleName);
             let packagePath = (resolvedPath || "" ).replace(`${moduleName}.js`,"package.json");
             if (!resolvedPath){
                ( { resolvedPath, packagePath } = await installModule({gitUsername,requiredModuleName}));
             }
-            const requiredModule = require(resolvedPath);
             const { name, hostname, port } = require(packagePath);
-            let moduleResults = {};
+            let info = {};
             if (requiredModuleName.startsWith("component")){
-                moduleResults["hostname"]           = hostname;
-                moduleResults["port"]               = port;
-                moduleResults["name"]               = name;
+                info["hostname"]           = hostname;
+                info["port"]               = port;
+                info["name"]               = name;
                 if (!hostname || !port){
                     throw new Error(`failed to register ${requiredModuleName}, package.json requires hostname and port configuration`);
                 }
             }
-            moduleResults[formatModuleName(requiredModuleName)] = requiredModule;
-            await resolve(moduleResults);
-            await this.delegate.call( { name: "acquired" }, moduleResults );
+            await resolve(info);
         });
     };
-    requireExt(moduleName).then(() => {
-        isReady = true;
-    });
 
-    this.ready = () => {
+    this.getInstance = () => {
         return new Promise(async (resolve) => {
-            setTimeout( async () => {
-                if (isReady){
-                    resolve(isReady);
-                } else {
-                    resolve(this.ready());
-                }
-            },100)
+            const info = await getModuleInfo(moduleName);
+            const instance = require(info.name);
+            await resolve(instance);
+            await this.delegate.call( { name: "acquired" }, instance );
+
         });
     };
 
