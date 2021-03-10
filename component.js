@@ -50,8 +50,30 @@ const canResolveModule = (moduleName) => {
     }
 };
 
-module.exports = function({ moduleName, gitUsername }) {
+const delegates = [];
+
+module.exports = function({ moduleName, gitUsername, parentModuleName }) {
+    
     let isReady = false;
+    this.name = moduleName;
+    this.delegate = {
+        call: ({ name, wildcard }, params) => {
+            for(const del of delegates.filter(d => d.context === parentModuleName)){
+                del.call({ name, wildcard }, params);
+            };
+        },
+        register: ({ name, overwriteDelegate = true }, params) => {
+            for(const del of delegates.filter(d => d.context === moduleName)){
+                del.register({ name, overwriteDelegate }, params);
+            };
+        }
+    };
+
+    delegates.push(new Delegate({
+        context: moduleName,
+        callbackContext: parentModuleName
+    }));
+
     const requireExt = (requiredModuleName) => {
         return new Promise(async (resolve, reject) => {
             let resolvedPath = canResolveModule(requiredModuleName);
@@ -60,45 +82,21 @@ module.exports = function({ moduleName, gitUsername }) {
                ( { resolvedPath, packagePath } = await installModule({gitUsername,requiredModuleName}));
             }
             const requiredModule = require(resolvedPath);
+            const { name, hostname, port } = require(packagePath);
             let moduleResults = {};
-            const { name, hostname, port, parentDependencies } = require(packagePath);
             if (requiredModuleName.startsWith("component")){
                 moduleResults["hostname"]           = hostname;
                 moduleResults["port"]               = port;
                 moduleResults["name"]               = name;
-                moduleResults["parentDependencies"] = parentDependencies;
-
-                const delegates = [];
-                for(const parentDep in parentDependencies){
-                    delegates.push(new Delegate({
-                        context: moduleName,
-                        callbackContext: parentDep
-                    }));
-                };
-                this.delegate = {
-                    call: ({ name, wildcard }, params) => {
-                        for(const del of delegates){
-                            del.call({ name, wildcard }, params);
-                        };
-                    },
-                    register: ({ name, overwriteDelegate = true }, params) => {
-                        for(const del of delegates){
-                            del.register({ name, overwriteDelegate }, params);
-                        };
-                    }
-                };
-
                 if (!hostname || !port){
                     throw new Error(`failed to register ${requiredModuleName}, package.json requires hostname and port configuration`);
                 }
             }
-            this.name = requiredModuleName;
             moduleResults[formatModuleName(requiredModuleName)] = requiredModule;
             await resolve(moduleResults);
             await this.delegate.call( { name: "acquired" }, moduleResults );
         });
     };
-
     requireExt(moduleName).then(() => {
         isReady = true;
     });
