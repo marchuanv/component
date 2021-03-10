@@ -19,18 +19,18 @@ const formatModuleName = (moduleName) => {
     return name;
 };
 
-const installModule = ({ gitUsername, requiredModuleName }) => {
+const installModule = ({ gitUsername, moduleName }) => {
     return new Promise(async (resolve, reject) => {
-        let moduleToInstall = requiredModuleName;
+        let moduleToInstall = moduleName;
         if (gitUsername) {
-            moduleToInstall = `${gitUsername}/${requiredModuleName}`;
+            moduleToInstall = `${gitUsername}/${moduleName}`;
         }
         exec(`npm install ${moduleToInstall} --no-save`, () => {
             const id = setInterval(() => {
-                let resolvedPath = path.join(__dirname,"node_modules", requiredModuleName);
+                let resolvedPath = path.join(__dirname,"node_modules", moduleName);
                 if (__dirname.indexOf("node_modules") > -1){
                     resolvedPath = path.join(__dirname,"../");
-                    resolvedPath = path.join(resolvedPath, requiredModuleName);
+                    resolvedPath = path.join(resolvedPath, moduleName);
                 }
                 if (fs.existsSync(resolvedPath)){
                     clearInterval(id);
