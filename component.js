@@ -52,12 +52,6 @@ module.exports = function(moduleName) {
 
     this.name = moduleName;
 
-    // const package = getPackage(module.name);
-    // let dependencies = [];
-    // if (package.dependencies){
-    //     dependencies = dependencies.concat(Object.getOwnPropertyNames(package.dependencies));
-    // }
-
     const lastAddedKnownComponent = knownComponents[knownComponents.length-1];
     if (lastAddedKnownComponent){
         lastAddedKnownComponent.delegate = new Delegate( { 
@@ -95,9 +89,7 @@ module.exports = function(moduleName) {
 
             const resolvedPath = require.resolve(moduleName);
             if (resolvedPath){
-                let package = getPackage(moduleName, resolvedPath);
-                const moduleResults = {};
-                const { name, hostname, port } = package;
+                const { name, hostname, port } = getPackage(moduleName, resolvedPath);
                 if (moduleName.startsWith("component")){
                     moduleResults["hostname"] = hostname;
                     moduleResults["port"] = port;
@@ -108,8 +100,8 @@ module.exports = function(moduleName) {
                 }
                 const requiredModule = require(moduleName);
                 moduleResults[formatModuleName(moduleName)] = requiredModule;
-                resolve(moduleResults);
-                // await delegate.call( { context: "module", name: "register" }, moduleResults );
+                await resolve(moduleResults);
+                await this.delegate.call( { name: "acquired" }, moduleResults );
             } else {
                 reject(new Error(`failed to register ${moduleName}, could not resolve ${moduleName}, see npm logs it might not be installed.`));
             }
