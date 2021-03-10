@@ -48,19 +48,21 @@ const getPackage = (moduleName, packageDir) => {
 
 const knownComponents = [];
 
-module.exports = function({ moduleName, parentModuleName }) {
+module.exports = function({ moduleName }) {
 
     this.name = moduleName;
     knownComponents.push(this);
+
+    let resolvedPath = require.resolve(moduleName);
+    const { parentModuleName } = getPackage(moduleName, resolvedPath);
     
-    this.delegate = new Delegate( { 
+    this.delegate = new Delegate({
         context: moduleName,
         callbackContext: parentModuleName || "none"
     });
     
     this.require = ( moduleName, { gitUsername } ) => {
         return new Promise(async (resolve) => {
-            let resolvedPath = require.resolve(moduleName);
             if (!resolvedPath){
                 let moduleToInstall;
                 if (gitUsername) {
