@@ -54,6 +54,9 @@ module.exports = function({ moduleName }) {
     knownComponents.push(this);
 
     let resolvedPath = require.resolve(moduleName);
+    if (!resolvedPath){
+        resolvedPath = __dirname;
+    }
     const { parentModuleName } = getPackage(moduleName, resolvedPath);
     
     this.delegate = new Delegate({
