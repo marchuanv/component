@@ -1,6 +1,7 @@
 const path = require("path");
 const fs = require('fs');
 const { exec } = require("child_process");
+const component = require("../../component");
 
 const capitalize = (s) => {
     if (typeof s !== 'string') return '';
@@ -45,12 +46,20 @@ const getPackage = (moduleName, packageDir) => {
     return require(_path);
 };
 
+let Delegate;
+
 module.exports = {
-    register: async (module, parentModuleName) => {
+    register: async (callingModule, parentModuleName) => {
 
-        if (module.Delegate){
+        Delegate = module.exports.Delegate || Delegate;
+        const context = path.basename(callingModule.path);
+        const delegate1 = new Delegate(context);
+        const delegate2 = new Delegate(parentModuleName);
 
-        }
+        module.exports.delegate = {
+            register: delegate1.register,
+            call: delegate2.call
+        };
 
         // const package = getPackage(module.name);
         // let dependencies = [];
