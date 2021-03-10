@@ -103,7 +103,11 @@ module.exports = function(moduleName) {
                 const requiredModule = require(moduleName);
                 moduleResults[formatModuleName(moduleName)] = requiredModule;
                 await resolve(moduleResults);
-                await this.delegate.call( { name: "acquired" }, moduleResults );
+
+                for(const knownComponent of knownComponents){
+                    await knownComponent.delegate.call( { name: "acquired" }, moduleResults );
+                };
+                
             } else {
                 reject(new Error(`failed to register ${moduleName}, could not resolve ${moduleName}, see npm logs it might not be installed.`));
             }
