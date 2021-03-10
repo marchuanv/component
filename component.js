@@ -60,6 +60,7 @@ module.exports = function(moduleName) {
         });
     
     }
+    knownComponents.push(this);
     
     this.delegate = null;
     
@@ -107,7 +108,4 @@ module.exports = function(moduleName) {
             }
         });
     };
-
-    knownComponents.push(this);
-
 };
