@@ -1,8 +1,13 @@
-let com  = require("./component.js");
+let Component = require("./component.js");
 (async() => {
-    let { component } = await com.require("component", {gitUsername: "marchuanv"});
-    await component.require("component.delegate", {gitUsername: "marchuanv"});
-    await component.register(module, "component");
+    
+    const component1 = new Component("Bob");
+    const component2 = new Component("Susan");
+
+
+    
+
+
 })().catch((err)=>{
     console.error(err);
 });

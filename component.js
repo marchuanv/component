@@ -1,6 +1,7 @@
 const path = require("path");
 const fs = require('fs');
 const { exec } = require("child_process");
+const Delegate = require("component.delegate");
 
 const capitalize = (s) => {
     if (typeof s !== 'string') return '';
@@ -45,31 +46,30 @@ const getPackage = (moduleName, packageDir) => {
     return require(_path);
 };
 
-let Delegate;
+const knownComponents = [];
 
-module.exports = {
-    register: async (callingModule, parentModuleName) => {
+module.exports = function(moduleName) {
 
-        Delegate = module.exports.Delegate || Delegate;
-        const context = path.basename(callingModule.path);
-        const delegate1 = new Delegate(context);
-        const delegate2 = new Delegate(parentModuleName);
+    this.name = moduleName;
 
-        module.exports.delegate = {
-            register: delegate1.register,
-            call: delegate2.call
-        };
+    // const package = getPackage(module.name);
+    // let dependencies = [];
+    // if (package.dependencies){
+    //     dependencies = dependencies.concat(Object.getOwnPropertyNames(package.dependencies));
+    // }
 
-        // const package = getPackage(module.name);
-        // let dependencies = [];
-        // if (package.dependencies){
-        //     dependencies = dependencies.concat(Object.getOwnPropertyNames(package.dependencies));
-        // }
-        // for(const dep of dependencies){
-
-        // };
-    },
-    require: ( moduleName, { gitUsername } ) => {
+    const lastAddedKnownComponent = knownComponents[knownComponents.length-1];
+    if (lastAddedKnownComponent){
+        lastAddedKnownComponent.delegate = new Delegate( { 
+            context: lastAddedKnownComponent.name,
+            callbackContext: this.name
+        });
+    
+    }
+    
+    this.delegate = null;
+    
+    this.require = ( moduleName, { gitUsername } ) => {
         return new Promise(async (resolve) => {
             
             let moduleToInstall =  moduleName;
@@ -114,5 +114,8 @@ module.exports = {
                 reject(new Error(`failed to register ${moduleName}, could not resolve ${moduleName}, see npm logs it might not be installed.`));
             }
         });
-    }
+    };
+
+    knownComponents.push(this);
+
 };
