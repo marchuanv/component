@@ -134,8 +134,8 @@ module.exports = {
         loaded: (callback) => {
             await delegate.register({ context: "global", name: "loaded", overwriteDelegate: true }, callback);
         },
-        publish: async ( { name, wildcard }, params) => {
-            await delegate.call({ context: "global", name, wildcard }, params);
+        broadcast: async ({ name }, params) => {
+            await delegate.call({ context: "global", name, wildcard: null }, params);
         }
     },
     load: async ({ moduleName, gitUsername }) => {
@@ -152,7 +152,7 @@ module.exports = {
         }
         const loadedModule = require(moduleInfo.resolvedPath);
         module.exports[moduleInfo.friendlyName] = mod;
-        await module.exports.events.publish({ name: "loaded" }, {
+        await module.exports.events.broadcast({ name: "loaded" }, {
             module: loadedModule,
             config: moduleInfo
         });
