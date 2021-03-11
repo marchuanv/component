@@ -89,9 +89,6 @@ module.exports = {
         }
     },
     load: async ({ moduleName, gitUsername, parentModuleName }) => {
-        if (!parentModuleName){
-            throw new Error("missing parameter: parentModuleName");
-        }
         if (!gitUsername){
             throw new Error("missing parameter: gitUsername");
         }
@@ -102,14 +99,16 @@ module.exports = {
         const instance = require(moduleInfo.modulePath);
         module.exports[moduleInfo.friendlyName] = instance;
         module.exports["config"] = moduleInfo;
-        module.exports[formatModuleName(parentModuleName)].delegate = {
-            register: async ({ context, name, overwriteDelegate = true }, callback) => {
-                await delegate.register({ context, name, overwriteDelegate }, callback);
-            },
-            call: async ( { context, name, wildcard }, params) => {
-                await delegate.call({ context: parentModuleName, name, wildcard }, params);
-            }
-        };
+        if (parentModuleName){
+            module.exports[formatModuleName(parentModuleName)].delegate = {
+                register: async ({ context, name, overwriteDelegate = true }, callback) => {
+                    await delegate.register({ context, name, overwriteDelegate }, callback);
+                },
+                call: async ( { context, name, wildcard }, params) => {
+                    await delegate.call({ context: parentModuleName, name, wildcard }, params);
+                }
+            };
+        }
         await resolve(results);
         await this.delegate.call( { name: "acquired" }, results );
     }
