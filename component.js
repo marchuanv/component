@@ -109,14 +109,33 @@ const getModuleInfo = ({ moduleName }) => {
 };
 
 module.exports = {
-    global: {
-        delegate: {
-            register: async ({ name, overwriteDelegate = true }, callback) => {
-                await delegate.register({ context: "component", name, overwriteDelegate }, callback);
-            },
-            call: async ( { name, wildcard }, params) => {
-                await delegate.call({ context: "component", name, wildcard }, params);
+    events: {
+        register: async ({ componentModule, componentParentModuleName }) => {
+            if (!componentModule){
+                throw new Error("missing parameter: componentModule");
             }
+            if (!componentParentModuleName){
+                throw new Error("missing parameter: componentParentModuleName");
+            }
+            if (!componentModule.filename){
+                throw new Error("parameter: componentModule is not of type module");
+            }
+            let componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
+            const events = module.exports.events;
+            events[formatComponentName(componentModulePackage.name)] = {
+                subscribe: async ({ name, overwriteDelegate = true }, callback) => {
+                    await delegate.register({ context: componentModulePackage.name, name, overwriteDelegate }, callback);
+                },
+                publish: async ( { name, wildcard }, params) => {
+                    await delegate.call({ context: componentParentModuleName, name, wildcard }, params);
+                }
+            };
+        },
+        loaded: (callback) => {
+            await delegate.register({ context: "global", name: "loaded", overwriteDelegate: true }, callback);
+        },
+        publish: async ( { name, wildcard }, params) => {
+            await delegate.call({ context: "global", name, wildcard }, params);
         }
     },
     load: async ({ moduleName, gitUsername }) => {
@@ -126,35 +145,16 @@ module.exports = {
         if (!moduleName){
             throw new Error("missing parameter: moduleName");
         }
-
         let moduleInfo = getModuleInfo({ moduleName });
         if (!moduleInfo.resolvedPath || !moduleInfo.packagePath){
            await installModule({ gitUsername, moduleName });
            moduleInfo = getModuleInfo({ moduleName });
         }
-
-        const mod = require(moduleInfo.resolvedPath);
+        const loadedModule = require(moduleInfo.resolvedPath);
         module.exports[moduleInfo.friendlyName] = mod;
-        await module.exports.global.delegate.call( { name: "acquired" }, module.exports[moduleInfo.friendlyName] );
-    },
-    register: async ({ componentModule, componentParentModuleName }) => {
-        if (!componentModule){
-            throw new Error("missing parameter: componentModule");
-        }
-        if (!componentParentModuleName){
-            throw new Error("missing parameter: componentParentModuleName");
-        }
-        if (!componentModule.filename){
-            throw new Error("parameter: componentModule is not of type module");
-        }
-        let componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
-        const moduleCallbackObjectName = `${formatComponentName(componentModulePackage.name)}Callback`;
-        const moduleRegisterObjectName = `${formatComponentName(componentModulePackage.name)}Register`;
-        module.exports[moduleCallbackObjectName] = async ( { name, wildcard }, params) => {
-            await delegate.call({ context: componentParentModuleName, name, wildcard }, params);
-        };
-        module.exports[moduleRegisterObjectName] = async ({ name, overwriteDelegate = true }, callback) => {
-            await delegate.register({ context: componentModulePackage.name , name, overwriteDelegate }, callback);
-        };
+        await module.exports.events.publish({ name: "loaded" }, {
+            module: loadedModule,
+            config: moduleInfo
+        });
     }
 };
