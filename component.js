@@ -1,8 +1,7 @@
 const path = require("path");
 const fs = require('fs');
 const { exec } = require("child_process");
-const Delegate = require("component.delegate");
-const { dirname } = require("path");
+const delegate = require("component.delegate");
 
 const capitalize = (s) => {
     if (typeof s !== 'string') return '';
@@ -78,37 +77,31 @@ const getModuleInfo = ({ moduleName, gitUsername }) => {
     });
 };
 
-const delegates = [];
-
 module.exports = {
-    delegate: {
-        call: async ({ name, wildcard }, params) => {
-            for(const del of delegates.filter(d => d.context === parentModuleName)){
-                await del.call({ name, wildcard }, params);
-            };
-        },
-        register: async ({ name, overwriteDelegate = true }, callback) => {
-            for(const del of delegates.filter(d => d.context === moduleName)){
-                await del.register({ name, overwriteDelegate }, callback);
-            };
+    global: {
+        delegate: {
+            register: async ({ name, overwriteDelegate = true }, callback) => {
+                await delegate.register({ context: "component", name, overwriteDelegate }, callback);
+            },
+            call: async ( { name, wildcard }, params) => {
+                await delegate.call({ context: "component", name, wildcard }, params);
+            }
         }
     },
-    getInstance: ({ moduleName, gitUsername, parentModuleName }) => {
-        return new Promise(async (resolve) => {
-            const moduleInfo = await getModuleInfo({ moduleName, gitUsername });
-
-            delegates.push(new Delegate({
-                context: moduleName,
-                callbackContext: parentModuleName || "None"
-            }));
-
-            const instance = require(moduleInfo.modulePath);
-            const results = {};
-            results[moduleInfo.friendlyName] = instance;
-            results["config"] = moduleInfo;
-            await resolve(results);
-            await this.delegate.call( { name: "acquired" }, results );
-            
-        });
+    load: async ({ moduleName, gitUsername, parentModuleName }) => {
+        const moduleInfo = await getModuleInfo({ moduleName, gitUsername });
+        const instance = require(moduleInfo.modulePath);
+        module.exports[moduleInfo.friendlyName] = instance;
+        module.exports["config"] = moduleInfo;
+        module.exports[formatModuleName(parentModuleName)].delegate = {
+            register: async ({ context, name, overwriteDelegate = true }, callback) => {
+                await delegate.register({ context, name, overwriteDelegate }, callback);
+            },
+            call: async ( { context, name, wildcard }, params) => {
+                await delegate.call({ context, name, wildcard }, params);
+            }
+        };
+        await resolve(results);
+        await this.delegate.call( { name: "acquired" }, results );
     }
 };
