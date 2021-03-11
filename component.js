@@ -99,17 +99,18 @@ module.exports = {
         const instance = require(moduleInfo.modulePath);
         module.exports[moduleInfo.friendlyName] = instance;
         module.exports["config"] = moduleInfo;
-        if (parentModuleName){
-            module.exports[formatModuleName(parentModuleName)].delegate = {
-                register: async ({ context, name, overwriteDelegate = true }, callback) => {
-                    await delegate.register({ context, name, overwriteDelegate }, callback);
-                },
-                call: async ( { context, name, wildcard }, params) => {
-                    await delegate.call({ context: parentModuleName, name, wildcard }, params);
+        if (parentModuleName) {
+            module.exports[formatModuleName(parentModuleName)] = {
+                delegate: {
+                    register: async ({ context, name, overwriteDelegate = true }, callback) => {
+                        await delegate.register({ context, name, overwriteDelegate }, callback);
+                    },
+                    call: async ( { context, name, wildcard }, params) => {
+                        await delegate.call({ context: parentModuleName, name, wildcard }, params);
+                    }
                 }
             };
         }
-        await resolve(results);
         await this.delegate.call( { name: "acquired" }, results );
     }
 };
