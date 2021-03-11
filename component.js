@@ -131,7 +131,7 @@ module.exports = {
                 }
             };
         },
-        loaded: (callback) => {
+        loaded: async (callback) => {
             await delegate.register({ context: "global", name: "loaded", overwriteDelegate: true }, callback);
         },
         broadcast: async ({ name }, params) => {
