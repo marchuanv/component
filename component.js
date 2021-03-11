@@ -151,7 +151,7 @@ module.exports = {
            moduleInfo = getModuleInfo({ moduleName });
         }
         const loadedModule = require(moduleInfo.resolvedPath);
-        module.exports[moduleInfo.friendlyName] = mod;
+        module.exports[moduleInfo.friendlyName] = loadedModule;
         await module.exports.events.broadcast({ name: "loaded" }, {
             module: loadedModule,
             config: moduleInfo
