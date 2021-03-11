@@ -8,14 +8,45 @@ const capitalize = (s) => {
     return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-const formatModuleName = (moduleName) => {
-    let parts = moduleName.split(".");
-    let name = parts[0];
+const formatComponentName = (name) => {
+    let parts = name.split(".");
+    const componentIndex = parts.findIndex(x => x.toLowerCase() === "component");
+    parts.splice(componentIndex,1);
+    name = parts[0];
     delete parts[0];
     for(const part of parts){
         name = name + capitalize(part);
     };
-    return name;
+    return name.replace("component","");
+};
+
+const resolvePackage = ({ mainFilePath }) => {
+    const mainFileName = path.basename(mainFilePath);
+    let packagePath = mainFilePath.replace(mainFileName,"package.json");
+    if (!fs.existsSync(packagePath)){
+        return undefined;
+    }
+    return require(packagePath);
+};
+
+const resolveModule = (moduleName) => {
+    try {
+        let resolvedPath = require.resolve(moduleName);
+        const fileName = path.basename(resolvedPath);
+        let packagePath = resolvedPath.replace(fileName, "package.json");
+        return { resolvedPath, packagePath };
+    } catch(err) {
+        let resolvedDir = path.join(__dirname,"node_modules", moduleName);
+        if (__dirname.indexOf("node_modules") > -1){
+            resolvedDir = path.join(__dirname,"../");
+            resolvedDir = path.join(resolvedDir, moduleName);
+        }
+        let packagePath = path.join(resolvedDir,"package.json");
+        const package = resolvePackage({ mainFilePath: packagePath });
+        let resolvedPath = package? path.join(resolvedDir, package.main) : null;
+        packagePath = package? packagePath : null;
+        return { resolvedPath, packagePath };
+    }
 };
 
 const installModule = ({ gitUsername, moduleName }) => {
@@ -26,58 +57,57 @@ const installModule = ({ gitUsername, moduleName }) => {
         }
         exec(`npm install ${moduleToInstall} --no-save`, () => {
             const id = setInterval(() => {
-                let resolvedPath = path.join(__dirname,"node_modules", moduleName);
-                if (__dirname.indexOf("node_modules") > -1){
-                    resolvedPath = path.join(__dirname,"../");
-                    resolvedPath = path.join(resolvedPath, moduleName);
-                }
-                if (fs.existsSync(resolvedPath)){
+                const info = resolveModule(moduleName);
+                if (info) {
                     clearInterval(id);
-                    const packagePath = path.join(resolvedPath,"package.json");
-                    const package = require(packagePath);
-                    resolve({
-                        resolvedPath: path.join(resolvedPath,package.main),
-                        packagePath
-                    });
+                    resolve(info);
                 }
             },100);
         });
     });
 };
 
-const canResolveModule = (moduleName) => {
-    try {
-        return require.resolve(moduleName);
-    } catch(err) {
-        console.log(err);
-        return false;
+const getPackageInfo = ({ dirPath, packagePath }) => {
+    const info = {
+        hostname: null,
+        port: null,
+        name: null,
+        friendlyName: null
+    };
+    if (!packagePath && dirPath){
+        packagePath = path.join(dirPath,"package.json");
     }
+    ({ 
+        hostname: info.hostname, 
+        port: info.port,
+        name: info.name
+    } = resolvePackage( { mainFilePath: packagePath }));
+    info.friendlyName = formatComponentName(info.name);
+    return info;
 };
 
-const getModuleInfo = ({ moduleName, gitUsername }) => {
-    return new Promise(async (resolve) => {
-        let resolvedPath = canResolveModule(moduleName);
-        let packagePath = (resolvedPath || "" ).replace(`${moduleName}.js`,"package.json");
-        if (!resolvedPath){
-            ( { resolvedPath, packagePath } = await installModule({gitUsername,moduleName}));
-        }
-        const { name, hostname, port } = require(packagePath);
-        let info = {};
-        if (moduleName.startsWith("component")){
-            info["hostname"]           = hostname;
-            info["port"]               = port;
-            info["name"]               = name;
-            info["friendlyName"]       = formatModuleName(name);
-            info["modulePath"]         = resolvedPath;
-            if (!hostname || !port){
-                throw new Error(`failed to register ${moduleName}, package.json requires hostname and port configuration`);
-            }
-        }
-        await resolve(info);
-    });
+const getModuleInfo = ({ moduleName }) => {
+    let info = { 
+        packagePath: null, 
+        resolvedPath: null,
+        hostname: null,
+        port: null,
+        name: null,
+        friendlyName: null
+    };
+    ({ packagePath: info.packagePath, resolvedPath: info.resolvedPath } = resolveModule(moduleName));
+    if (!info.packagePath || !info.resolvedPath){
+        return info;
+    }
+    ({ 
+        name: info.name, 
+        hostname: info.hostname, 
+        port: info.port, 
+        friendlyName: info.friendlyName
+    } = getPackageInfo({ packagePath: info.packagePath }));
+    return info;
 };
 
-const moduleHierarchy = [];
 module.exports = {
     global: {
         delegate: {
@@ -89,113 +119,42 @@ module.exports = {
             }
         }
     },
-    load: async ({ moduleName, gitUsername, parentModuleName }) => {
+    load: async ({ moduleName, gitUsername }) => {
         if (!gitUsername){
             throw new Error("missing parameter: gitUsername");
         }
         if (!moduleName){
             throw new Error("missing parameter: moduleName");
         }
-        const moduleInfo = await getModuleInfo({ moduleName, gitUsername });
 
-        let foundParentModule = moduleHierarchy.find( m => m.name === parentModuleName );
-        if (!foundParentModule){
-            foundParentModule = { name: parentModuleName, parent: null };
-            moduleHierarchy.push(foundParentModule);
+        let moduleInfo = getModuleInfo({ moduleName });
+        if (!moduleInfo.resolvedPath || !moduleInfo.packagePath){
+           await installModule({ gitUsername, moduleName });
+           moduleInfo = getModuleInfo({ moduleName });
         }
 
-        let foundModule = moduleHierarchy.find( m => m.name === moduleInfo.name );
-        if (!foundModule){
-            foundModule = { name: moduleInfo.name, parent: foundParentModule };
-            moduleHierarchy.push(foundModule);
-        }
-
-        if (foundModule.parent.name !== foundParentModule.name){
-            moduleHierarchy.push({ name: moduleInfo.name, parent: foundParentModule });
-        }
-
-        const mod = require(moduleInfo.modulePath);
-        module.exports[moduleInfo.friendlyName] = {
-            module: mod,
-            config: moduleInfo,
-            event: {
-                register: async ({ name, overwriteDelegate = true }, callback) => {
-                    await delegate.register({ context: moduleInfo.name, name, overwriteDelegate }, callback);
-                },
-                call: async ( { name, wildcard }, params) => {
-                    for(const mod of moduleHierarchy.filter(m => m.name === moduleInfo.name)){
-                        await delegate.call({ context: mod.parent.name, name, wildcard }, params);
-                    };
-                }
-            }
-        };
-        if (!module.exports[formatModuleName(parentModuleName)] && parentModuleName){
-            module.exports[formatModuleName(parentModuleName)] = {
-                module: null,
-                config: null,
-                delegate: {
-                    register: async ({ context, name, overwriteDelegate = true }, callback) => {
-                        await delegate.register({ context, name, overwriteDelegate }, callback);
-                    },
-                    call: async ( { context, name, wildcard }, params) => {
-                        await delegate.call({ context: parentModuleName, name, wildcard }, params);
-                    }
-                }
-            };
-        }
+        const mod = require(moduleInfo.resolvedPath);
+        module.exports[moduleInfo.friendlyName] = mod;
         await module.exports.global.delegate.call( { name: "acquired" }, module.exports[moduleInfo.friendlyName] );
     },
     register: async ({ componentModule, componentParentModuleName }) => {
-        
-        if (!componentModule.fileName){
-            throw new Error("the provided componentModule is not a node module");
+        if (!componentModule){
+            throw new Error("missing parameter: componentModule");
         }
-
-        // let foundParentModule = moduleHierarchy.find( m => m.name === parentModuleName );
-        // if (!foundParentModule){
-        //     foundParentModule = { name: parentModuleName, parent: null };
-        //     moduleHierarchy.push(foundParentModule);
-        // }
-
-        // let foundModule = moduleHierarchy.find( m => m.name === moduleInfo.name );
-        // if (!foundModule){
-        //     foundModule = { name: moduleInfo.name, parent: foundParentModule };
-        //     moduleHierarchy.push(foundModule);
-        // }
-
-        // if (foundModule.parent.name !== foundParentModule.name){
-        //     moduleHierarchy.push({ name: moduleInfo.name, parent: foundParentModule });
-        // }
-
-        // const mod = require(moduleInfo.modulePath);
-        // module.exports[moduleInfo.friendlyName] = {
-        //     module: mod,
-        //     config: moduleInfo,
-        //     event: {
-        //         register: async ({ name, overwriteDelegate = true }, callback) => {
-        //             await delegate.register({ context: moduleInfo.name, name, overwriteDelegate }, callback);
-        //         },
-        //         call: async ( { name, wildcard }, params) => {
-        //             for(const mod of moduleHierarchy.filter(m => m.name === moduleInfo.name)){
-        //                 await delegate.call({ context: mod.parent.name, name, wildcard }, params);
-        //             };
-        //         }
-        //     }
-        // };
-        // if (!module.exports[formatModuleName(parentModuleName)] && parentModuleName){
-        //     module.exports[formatModuleName(parentModuleName)] = {
-        //         module: null,
-        //         config: null,
-        //         delegate: {
-        //             register: async ({ context, name, overwriteDelegate = true }, callback) => {
-        //                 await delegate.register({ context, name, overwriteDelegate }, callback);
-        //             },
-        //             call: async ( { context, name, wildcard }, params) => {
-        //                 await delegate.call({ context: parentModuleName, name, wildcard }, params);
-        //             }
-        //         }
-        //     };
-        // }
-        // await module.exports.global.delegate.call( { name: "acquired" }, module.exports[moduleInfo.friendlyName] );
+        if (!componentParentModuleName){
+            throw new Error("missing parameter: componentParentModuleName");
+        }
+        if (!componentModule.filename){
+            throw new Error("parameter: componentModule is not of type module");
+        }
+        let componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
+        const moduleCallbackObjectName = `${formatComponentName(componentModulePackage.name)}Callback`;
+        const moduleRegisterObjectName = `${formatComponentName(componentModulePackage.name)}Register`;
+        module.exports[moduleCallbackObjectName] = async ( { name, wildcard }, params) => {
+            await delegate.call({ context: componentParentModuleName, name, wildcard }, params);
+        };
+        module.exports[moduleRegisterObjectName] = async ({ name, overwriteDelegate = true }, callback) => {
+            await delegate.register({ context: componentModulePackage.name , name, overwriteDelegate }, callback);
+        };
     }
 };
