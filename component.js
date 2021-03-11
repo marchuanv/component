@@ -77,6 +77,7 @@ const getModuleInfo = ({ moduleName, gitUsername }) => {
     });
 };
 
+const moduleHierarchy = [];
 module.exports = {
     global: {
         delegate: {
@@ -96,11 +97,42 @@ module.exports = {
             throw new Error("missing parameter: moduleName");
         }
         const moduleInfo = await getModuleInfo({ moduleName, gitUsername });
-        const instance = require(moduleInfo.modulePath);
-        module.exports[moduleInfo.friendlyName] = instance;
-        module.exports["config"] = moduleInfo;
-        if (parentModuleName) {
+
+        let foundParentModule = moduleHierarchy.find( m => m.name === parentModuleName );
+        if (!foundParentModule){
+            foundParentModule = { name: parentModuleName, parent: null };
+            moduleHierarchy.push(foundParentModule);
+        }
+
+        let foundModule = moduleHierarchy.find( m => m.name === moduleInfo.name );
+        if (!foundModule){
+            foundModule = { name: moduleInfo.name, parent: foundParentModule };
+            moduleHierarchy.push(foundModule);
+        }
+
+        if (foundModule.parent.name !== foundParentModule.name){
+            moduleHierarchy.push({ name: moduleInfo.name, parent: foundParentModule });
+        }
+
+        const mod = require(moduleInfo.modulePath);
+        module.exports[moduleInfo.friendlyName] = {
+            module: mod,
+            config: moduleInfo,
+            event: {
+                register: async ({ name, overwriteDelegate = true }, callback) => {
+                    await delegate.register({ context: moduleInfo.name, name, overwriteDelegate }, callback);
+                },
+                call: async ( { name, wildcard }, params) => {
+                    for(const mod of moduleHierarchy.filter(m => m.name === moduleInfo.name)){
+                        await delegate.call({ context: mod.parent.name, name, wildcard }, params);
+                    };
+                }
+            }
+        };
+        if (!module.exports[formatModuleName(parentModuleName)] && parentModuleName){
             module.exports[formatModuleName(parentModuleName)] = {
+                module: null,
+                config: null,
                 delegate: {
                     register: async ({ context, name, overwriteDelegate = true }, callback) => {
                         await delegate.register({ context, name, overwriteDelegate }, callback);
@@ -111,6 +143,59 @@ module.exports = {
                 }
             };
         }
-        await this.delegate.call( { name: "acquired" }, results );
+        await module.exports.global.delegate.call( { name: "acquired" }, module.exports[moduleInfo.friendlyName] );
+    },
+    register: async ({ componentModule, componentParentModuleName }) => {
+        
+        if (!componentModule.fileName){
+            throw new Error("the provided componentModule is not a node module");
+        }
+
+        // let foundParentModule = moduleHierarchy.find( m => m.name === parentModuleName );
+        // if (!foundParentModule){
+        //     foundParentModule = { name: parentModuleName, parent: null };
+        //     moduleHierarchy.push(foundParentModule);
+        // }
+
+        // let foundModule = moduleHierarchy.find( m => m.name === moduleInfo.name );
+        // if (!foundModule){
+        //     foundModule = { name: moduleInfo.name, parent: foundParentModule };
+        //     moduleHierarchy.push(foundModule);
+        // }
+
+        // if (foundModule.parent.name !== foundParentModule.name){
+        //     moduleHierarchy.push({ name: moduleInfo.name, parent: foundParentModule });
+        // }
+
+        // const mod = require(moduleInfo.modulePath);
+        // module.exports[moduleInfo.friendlyName] = {
+        //     module: mod,
+        //     config: moduleInfo,
+        //     event: {
+        //         register: async ({ name, overwriteDelegate = true }, callback) => {
+        //             await delegate.register({ context: moduleInfo.name, name, overwriteDelegate }, callback);
+        //         },
+        //         call: async ( { name, wildcard }, params) => {
+        //             for(const mod of moduleHierarchy.filter(m => m.name === moduleInfo.name)){
+        //                 await delegate.call({ context: mod.parent.name, name, wildcard }, params);
+        //             };
+        //         }
+        //     }
+        // };
+        // if (!module.exports[formatModuleName(parentModuleName)] && parentModuleName){
+        //     module.exports[formatModuleName(parentModuleName)] = {
+        //         module: null,
+        //         config: null,
+        //         delegate: {
+        //             register: async ({ context, name, overwriteDelegate = true }, callback) => {
+        //                 await delegate.register({ context, name, overwriteDelegate }, callback);
+        //             },
+        //             call: async ( { context, name, wildcard }, params) => {
+        //                 await delegate.call({ context: parentModuleName, name, wildcard }, params);
+        //             }
+        //         }
+        //     };
+        // }
+        // await module.exports.global.delegate.call( { name: "acquired" }, module.exports[moduleInfo.friendlyName] );
     }
 };
