@@ -107,7 +107,7 @@ const getModuleInfo = ({ moduleName }) => {
     } = getPackageInfo({ packagePath: info.packagePath }));
     return info;
 };
-
+let loadingComponets = [];
 module.exports = {
     events: {
         register: async ({ componentModule, componentParentModuleName }) => {
@@ -135,26 +135,38 @@ module.exports = {
             await delegate.register({ context: "global", name: "loaded", overwriteDelegate: true }, callback);
         },
         broadcast: async ({ name }, params) => {
-            await delegate.call({ context: "global", name, wildcard: null }, params);
+            await delegate.call({ context: "global", name }, params);
         }
     },
-    load: async ({ moduleName, gitUsername }) => {
-        if (!gitUsername){
-            throw new Error("missing parameter: gitUsername");
-        }
-        if (!moduleName){
-            throw new Error("missing parameter: moduleName");
-        }
-        let moduleInfo = getModuleInfo({ moduleName });
-        if (!moduleInfo.resolvedPath || !moduleInfo.packagePath){
-           await installModule({ gitUsername, moduleName });
-           moduleInfo = getModuleInfo({ moduleName });
-        }
-        const loadedModule = require(moduleInfo.resolvedPath);
-        module.exports[moduleInfo.friendlyName] = loadedModule;
-        await module.exports.events.broadcast({ name: "loaded" }, {
-            module: loadedModule,
-            config: moduleInfo
+    load: ({ moduleName, gitUsername }) => {
+        return new Promise(async (resolve) => {
+            if (!gitUsername){
+                throw new Error("missing parameter: gitUsername");
+            }
+            if (!moduleName){
+                throw new Error("missing parameter: moduleName");
+            }
+            loadingComponets.push(moduleName);
+            let moduleInfo = getModuleInfo({ moduleName });
+            if (!moduleInfo.resolvedPath || !moduleInfo.packagePath){
+                await installModule({ gitUsername, moduleName });
+                moduleInfo = getModuleInfo({ moduleName });
+            }
+            const loadedModule = require(moduleInfo.resolvedPath);
+            module.exports[moduleInfo.friendlyName] = loadedModule;
+            const id = setInterval(async ()=> {
+                const latestLoadingModule = loadingComponets[loadingComponets.length-1];
+                if (latestLoadingModule === moduleName) {
+                    await module.exports.events.broadcast({ name: "loaded" }, {
+                        module: loadedModule,
+                        config: moduleInfo
+                    });
+                    loadingComponets.pop();
+                    clearInterval(id);
+                    resolve();
+                }
+            },100);
+            
         });
     }
 };
