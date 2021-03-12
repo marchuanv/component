@@ -114,34 +114,32 @@ const references = {
     config: {}
 };
 module.exports = {
-    events: {
-        register: async ({ componentModule, componentParentModuleName }) => {
-            const newComponent = {};
-            if (!componentModule){
-                throw new Error("missing parameter: componentModule");
-            }
-            if (!componentParentModuleName){
-                throw new Error("missing parameter: componentParentModuleName");
-            }
-            if (!componentModule.filename){
-                throw new Error("parameter: componentModule is not of type module");
-            }
-            let componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
-            await logging.register({ packageJson: componentModulePackage });
-
-            newComponent.subscribe = async ({ name, overwriteDelegate = true }, callback) => {
-                await delegate.register({ context: componentModulePackage.name, name, overwriteDelegate }, callback);
-            };
-            newComponent.publish = async ( { name, wildcard }, params) => {
-                await delegate.call({ context: componentParentModuleName, name, wildcard }, params);
-            };
-            newComponent.log = (message, data = null) => {
-                logging.write(componentModulePackage.name, message, data);
-            };
-            const results = {};
-            results[formatComponentName(componentModulePackage.name)] = newComponent;
-            return results;
+    register: async ({ componentModule, componentParentModuleName }) => {
+        const newComponent = {};
+        if (!componentModule){
+            throw new Error("missing parameter: componentModule");
         }
+        if (!componentParentModuleName){
+            throw new Error("missing parameter: componentParentModuleName");
+        }
+        if (!componentModule.filename){
+            throw new Error("parameter: componentModule is not of type module");
+        }
+        let componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
+        await logging.register({ packageJson: componentModulePackage });
+
+        newComponent.subscribe = async ({ name, overwriteDelegate = true }, callback) => {
+            await delegate.register({ context: componentModulePackage.name, name, overwriteDelegate }, callback);
+        };
+        newComponent.publish = async ( { name, wildcard }, params) => {
+            await delegate.call({ context: componentParentModuleName, name, wildcard }, params);
+        };
+        newComponent.log = (message, data = null) => {
+            logging.write(componentModulePackage.name, message, data);
+        };
+        const results = {};
+        results[formatComponentName(componentModulePackage.name)] = newComponent;
+        return results;
     },
     load: ({ moduleName }) => {
         return new Promise(async (resolve) => {
