@@ -108,6 +108,9 @@ const getModuleInfo = ({ moduleName }) => {
     return info;
 };
 let loadingComponets = [];
+const references = {
+    config: {}
+};
 module.exports = {
     events: {
         register: async ({ componentModule, componentParentModuleName }) => {
@@ -152,19 +155,15 @@ module.exports = {
                 await installModule({ gitUsername, moduleName });
                 moduleInfo = getModuleInfo({ moduleName });
             }
-            const loadedModule = require(moduleInfo.resolvedPath);
-            const results = {};
-            
-            results[moduleInfo.friendlyName] = loadedModule;
-            results.config = moduleInfo;
-            
+            references[moduleInfo.friendlyName] =  require(moduleInfo.resolvedPath);
+            references.config[moduleInfo.friendlyName] = moduleInfo;
             const id = setInterval(async ()=> {
                 const latestLoadingModule = loadingComponets[loadingComponets.length-1];
                 if (latestLoadingModule === moduleName) {
                     clearInterval(id);
-                    await module.exports.events.broadcast({ name: "loaded" }, results);
+                    await module.exports.events.broadcast({ name: "loaded" }, references);
                     loadingComponets.pop();
-                    await resolve(results);
+                    await resolve(references);
                 }
             },100);
             
