@@ -135,7 +135,7 @@ module.exports = {
             newComponent.publish = async ( { name, wildcard }, params) => {
                 await delegate.call({ context: componentParentModuleName, name, wildcard }, params);
             };
-            newComponent.write = async ({ message, data = null }) => {
+            newComponent.log = async ({ message, data = null }) => {
                 logging.write(componentModulePackage.name, message, data);
             };
             newComponent[componentModulePackage.name] = newComponent;
