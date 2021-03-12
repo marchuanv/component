@@ -153,17 +153,18 @@ module.exports = {
                 moduleInfo = getModuleInfo({ moduleName });
             }
             const loadedModule = require(moduleInfo.resolvedPath);
-            module.exports[moduleInfo.friendlyName] = loadedModule;
+            const results = {};
+            
+            results[moduleInfo.friendlyName] = loadedModule;
+            results.config = moduleInfo;
+            
             const id = setInterval(async ()=> {
                 const latestLoadingModule = loadingComponets[loadingComponets.length-1];
                 if (latestLoadingModule === moduleName) {
-                    await module.exports.events.broadcast({ name: "loaded" }, {
-                        module: loadedModule,
-                        config: moduleInfo
-                    });
-                    loadingComponets.pop();
                     clearInterval(id);
-                    resolve();
+                    await module.exports.events.broadcast({ name: "loaded" }, results);
+                    loadingComponets.pop();
+                    await resolve(results);
                 }
             },100);
             
