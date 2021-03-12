@@ -55,7 +55,7 @@ const installModule = ({ gitUsername, moduleName }) => {
         if (gitUsername) {
             moduleToInstall = `${gitUsername}/${moduleName}`;
         }
-        exec(`npm install ${moduleToInstall} --no-save`, () => {
+        exec(`npm install ${moduleToInstall} --no-save --no-package-lock`, () => {
             const id = setInterval(() => {
                 const info = resolveModule(moduleName);
                 if (info) {
