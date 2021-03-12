@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require('fs');
 const { exec } = require("child_process");
 const delegate = require("component.delegate");
+const logging = require("component.logging");
 const { gitUsername } = require("./package.json");
 
 const capitalize = (s) => {
@@ -113,6 +114,7 @@ const references = {
     config: {}
 };
 module.exports = {
+    logging: {},
     events: {
         register: async ({ componentModule, componentParentModuleName }) => {
             if (!componentModule){
@@ -125,6 +127,7 @@ module.exports = {
                 throw new Error("parameter: componentModule is not of type module");
             }
             let componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
+            
             const events = module.exports.events;
             events[formatComponentName(componentModulePackage.name)] = {
                 subscribe: async ({ name, overwriteDelegate = true }, callback) => {
@@ -132,6 +135,13 @@ module.exports = {
                 },
                 publish: async ( { name, wildcard }, params) => {
                     await delegate.call({ context: componentParentModuleName, name, wildcard }, params);
+                }
+            };
+
+            await logging.register({ packageJson: componentModulePackage });
+            module.exports.logging[formatComponentName(componentModulePackage.name)] = {
+                write: async ({ message, data = null }) => {
+                    logging.write(componentModulePackage.name, message, data);
                 }
             };
         },
