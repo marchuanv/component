@@ -138,8 +138,9 @@ module.exports = {
             newComponent.log = async ({ message, data = null }) => {
                 logging.write(componentModulePackage.name, message, data);
             };
-            newComponent[componentModulePackage.name] = newComponent;
-            return newComponent;
+            const results = {};
+            results[formatComponentName(componentModulePackage.name)] = newComponent;
+            return results;
         }
     },
     load: ({ moduleName }) => {
