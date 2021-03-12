@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require('fs');
 const { exec } = require("child_process");
 const delegate = require("component.delegate");
+const { gitUsername } = require("./package.json");
 
 const capitalize = (s) => {
     if (typeof s !== 'string') return '';
@@ -49,7 +50,7 @@ const resolveModule = (moduleName) => {
     }
 };
 
-const installModule = ({ gitUsername, moduleName }) => {
+const installModule = ({ moduleName }) => {
     return new Promise(async (resolve, reject) => {
         let moduleToInstall = moduleName;
         if (gitUsername) {
@@ -141,18 +142,15 @@ module.exports = {
             await delegate.call({ context: "global", name }, params);
         }
     },
-    load: ({ moduleName, gitUsername }) => {
+    load: ({ moduleName }) => {
         return new Promise(async (resolve) => {
-            if (!gitUsername){
-                throw new Error("missing parameter: gitUsername");
-            }
             if (!moduleName){
                 throw new Error("missing parameter: moduleName");
             }
             loadingComponets.push(moduleName);
             let moduleInfo = getModuleInfo({ moduleName });
             if (!moduleInfo.resolvedPath || !moduleInfo.packagePath){
-                await installModule({ gitUsername, moduleName });
+                await installModule({ moduleName });
                 moduleInfo = getModuleInfo({ moduleName });
             }
             references[moduleInfo.friendlyName] =  require(moduleInfo.resolvedPath);
