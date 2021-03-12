@@ -128,8 +128,7 @@ module.exports = {
             }
             let componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
             
-            const events = module.exports.events;
-            events[formatComponentName(componentModulePackage.name)] = {
+            module.exports.events[formatComponentName(componentModulePackage.name)] = {
                 subscribe: async ({ name, overwriteDelegate = true }, callback) => {
                     await delegate.register({ context: componentModulePackage.name, name, overwriteDelegate }, callback);
                 },
@@ -144,9 +143,6 @@ module.exports = {
                     logging.write(componentModulePackage.name, message, data);
                 }
             };
-        },
-        loaded: async (callback) => {
-            await delegate.register({ context: "global", name: "loaded", overwriteDelegate: true }, callback);
         },
         broadcast: async ({ name }, params) => {
             await delegate.call({ context: "global", name }, params);
