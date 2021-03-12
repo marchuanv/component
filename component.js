@@ -161,7 +161,7 @@ module.exports = {
                 const latestLoadingModule = loadingComponets[loadingComponets.length-1];
                 if (latestLoadingModule === moduleName) {
                     clearInterval(id);
-                    await module.exports.events.broadcast({ name: "loaded" }, references);
+                    await module.exports.events.broadcast({ name: "loaded" }, { config: moduleInfo });
                     loadingComponets.pop();
                     await resolve(references);
                 }
