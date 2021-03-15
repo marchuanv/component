@@ -125,8 +125,8 @@ module.exports = {
         let componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
         await logging.register({ packageJson: componentModulePackage });
 
-        let moduleName;
-        const { name: moduleName, parentModuleName } = componentModulePackage;
+        let { moduleName, parentModuleName} = {};
+        ({ name: moduleName, parentModuleName: parentName } = componentModulePackage);
 
         newComponent.subscribe = async ({ name, overwriteDelegate = true }, callback) => {
             return await delegate.register({ context: moduleName, name, overwriteDelegate }, callback);
