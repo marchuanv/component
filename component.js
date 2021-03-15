@@ -129,13 +129,13 @@ module.exports = {
         await logging.register({ packageJson: componentModulePackage });
 
         newComponent.subscribe = async ({ name, overwriteDelegate = true }, callback) => {
-            await delegate.register({ context: componentModulePackage.name, name, overwriteDelegate }, callback);
+            return await delegate.register({ context: componentModulePackage.name, name, overwriteDelegate }, callback);
         };
         newComponent.publish = async ( { name, wildcard }, params) => {
-            await delegate.call({ context: componentParentModuleName, name, wildcard }, params);
+            return await delegate.call({ context: componentParentModuleName, name, wildcard }, params);
         };
         newComponent.log = (message, data = null) => {
-            logging.write(componentModulePackage.name, message, data);
+            return logging.write(componentModulePackage.name, message, data);
         };
         const results = {};
         results[formatComponentName(componentModulePackage.name)] = newComponent;
