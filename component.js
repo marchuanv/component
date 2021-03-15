@@ -127,20 +127,17 @@ module.exports = {
         let componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
         await logging.register({ packageJson: componentModulePackage });
 
-        let { moduleName, parentModuleName} = {};
-        ({ name: moduleName, parentName: parentModuleName } = componentModulePackage);
-
         newComponent.subscribe = async ({ name, overwriteDelegate = true }, callback) => {
-            return await delegate.register({ context: moduleName, name, overwriteDelegate }, callback);
+            return await delegate.register({ context: componentModulePackage.name, name, overwriteDelegate }, callback);
         };
         newComponent.publish = async ( { name, wildcard }, params) => {
-            return await delegate.call({ context: parentModuleName, name, wildcard }, params);
+            return await delegate.call({ context: componentModulePackage.parentName, name, wildcard }, params);
         };
         newComponent.log = (message, data = null) => {
-            return logging.write(moduleName, message, data);
+            return logging.write(componentModulePackage.name, message, data);
         };
         const results = {};
-        results[formatComponentName(moduleName)] = newComponent;
+        results[formatComponentName(componentModulePackage.name)] = newComponent;
         return results;
     },
     load: ({ moduleName }) => {
