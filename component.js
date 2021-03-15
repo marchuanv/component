@@ -102,8 +102,9 @@ const getModuleInfo = ({ moduleName }) => {
         return info;
     }
     ({ 
-        name: info.name, 
-        hostname: info.hostname, 
+        name: info.name,
+        parentName: info.parentName,
+        hostname: info.hostname,
         port: info.port, 
         friendlyName: info.friendlyName
     } = getPackageInfo({ packagePath: info.packagePath }));
