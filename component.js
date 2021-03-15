@@ -82,7 +82,8 @@ const getPackageInfo = ({ dirPath, packagePath }) => {
     ({ 
         hostname: info.hostname, 
         port: info.port,
-        name: info.name
+        name: info.name,
+        parentName: info.parentName
     } = resolvePackage( { mainFilePath: packagePath }));
     info.friendlyName = formatComponentName(info.name);
     return info;
