@@ -128,12 +128,15 @@ module.exports = {
         await logging.register({ packageJson: componentModulePackage });
 
         newComponent.subscribe = async ({ name, overwriteDelegate = true }, callback) => {
+            componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
             return await delegate.register({ context: componentModulePackage.name, name, overwriteDelegate }, callback);
         };
         newComponent.publish = async ( { name, wildcard }, params) => {
+            componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
             return await delegate.call({ context: componentModulePackage.parentName, name, wildcard }, params);
         };
         newComponent.log = (message, data = null) => {
+            componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
             return logging.write(componentModulePackage.name, message, data);
         };
         const results = {};
