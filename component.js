@@ -116,27 +116,27 @@ const references = {
     config: {}
 };
 module.exports = {
-    register: async ({ componentModule }) => {
+    register: async ({ componentPackagePath }) => {
         const newComponent = {};
-        if (!componentModule){
-            throw new Error("missing parameter: componentModule");
+        if (componentPackagePath){
+            throw new Error("missing parameter: modulePackagePath");
         }
-        if (!componentModule.filename){
-            throw new Error("parameter: componentModule is not of type module");
+        if (!fs.existsSync(componentPackagePath)){
+            throw new Error(`package: ${componentPackagePath} does not exist.`);
         }
-        let componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
+        let componentModulePackage = getPackageInfo({ packagePath: componentPackagePath });
         await logging.register({ packageJson: componentModulePackage });
 
         newComponent.subscribe = async ({ name, overwriteDelegate = true }, callback) => {
-            componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
+            componentModulePackage = getPackageInfo({ packagePath: componentPackagePath });
             return await delegate.register({ context: componentModulePackage.name, name, overwriteDelegate }, callback);
         };
         newComponent.publish = async ( { name, wildcard }, params) => {
-            componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
+            componentModulePackage = getPackageInfo({ packagePath: componentPackagePath });
             return await delegate.call({ context: componentModulePackage.parentName, name, wildcard }, params);
         };
         newComponent.log = (message, data = null) => {
-            componentModulePackage = getPackageInfo({ packagePath: componentModule.filename });
+            componentModulePackage = getPackageInfo({ packagePath: componentPackagePath });
             return logging.write(componentModulePackage.name, message, data);
         };
         const results = {};
