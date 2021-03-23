@@ -118,7 +118,7 @@ module.exports = {
         await logging.register({ packageJson: componentConfig });
         const newComponent = utils.getJSONObject(utils.getJSONString(componentConfig));
         newComponent.subscribe = async ({ name, overwriteDelegate = true }, callback) => {
-            componentConfig = getComponentConfig({ moduleName: componentConfig.name });
+            componentConfig = getComponentConfig({ moduleName });
             return await delegate.register({ context: componentConfig.name, name, overwriteDelegate }, callback);
         };
         newComponent.publish = async ( { name, wildcard }, params) => {
