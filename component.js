@@ -122,7 +122,7 @@ module.exports = {
             return await delegate.register({ context: componentConfig.name, name, overwriteDelegate }, callback);
         };
         newComponent.publish = async ( { name, wildcard }, params) => {
-            componentConfig = getComponentConfig({ moduleName: componentConfig.name });
+            componentConfig = getComponentConfig({ moduleName });
             return await delegate.call({ context: componentConfig.parentName, name, wildcard }, params);
         };
         newComponent.log = (message, data = null) => {
