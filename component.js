@@ -87,20 +87,22 @@ const getPackage = ({ dirPath, packagePath }) => {
 };
 
 const getComponentConfig = ({ moduleName }) => {
-    let component = {
+    let config = {
         packagePath: null, 
         resolvedPath: null,
         name: null,
         friendlyName: null,
         parentName: null
     };
-    ({ packagePath: component.packagePath, resolvedPath: component.resolvedPath } = resolveModule(moduleName));
-    if (!component.packagePath || !component.resolvedPath){
-        return component;
+    ({ packagePath: config.packagePath, resolvedPath: config.resolvedPath } = resolveModule(moduleName));
+    if (!config.packagePath || !config.resolvedPath){
+        return config;
     }
-    ({ name: component.name, component } = getPackage({ packagePath: component.packagePath }));
-    component.friendlyName = formatComponentName(component.name);
-    return component;
+    let { name, component } = getPackage(config);
+    component.name = name;
+    Object.assign(config, component);
+    config.friendlyName = formatComponentName(config.name);
+    return config;
 };
 
 let loadingComponets = [];
