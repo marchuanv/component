@@ -123,9 +123,14 @@ module.exports = {
         };
         newComponent.publish = async ( { name, wildcard }, params) => {
             componentConfig = getComponentConfig({ moduleName });
+            const results = [];
             for(const context of componentConfig.parent){
-                await delegate.call({ context, name, wildcard }, params);
+                const result = await delegate.call({ context, name, wildcard }, params);
+                if (result && !result.message && !result.stack){
+                    results.push({ context, result });
+                }
             };
+            return results;
         };
         newComponent.log = (message, data = null) => {
             componentConfig = getComponentConfig({ moduleName });
