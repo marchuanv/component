@@ -118,7 +118,7 @@ const references = {
 module.exports = {
     register: async ({ componentPackagePath }) => {
         const newComponent = {};
-        if (componentPackagePath){
+        if (!componentPackagePath){
             throw new Error("missing parameter: componentPackagePath");
         }
         if (!fs.existsSync(componentPackagePath)){
