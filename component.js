@@ -71,17 +71,10 @@ const installModule = ({ moduleName }) => {
 };
 
 const getPackageInfo = ({ dirPath, packagePath }) => {
-    const info = {
-        name: null,
-        friendlyName: null
-    };
     if (!packagePath && dirPath){
-        packagePath = path.join(dirPath,"package.json");
+        packagePath = path.join(dirPath, "package.json");
     }
-    ({
-        name: info.name,
-        parentName: info.parentName
-    } = resolvePackage( { mainFilePath: packagePath }));
+    const info = resolvePackage({ mainFilePath: packagePath });
     info.friendlyName = formatComponentName(info.name);
     return info;
 };
