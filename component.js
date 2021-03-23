@@ -45,10 +45,16 @@ const resolveModule = (moduleName) => {
             resolvedDir = path.join(__dirname,"../");
             resolvedDir = path.join(resolvedDir, moduleName);
         }
-        let packagePath = path.join(resolvedDir,"package.json");
-        const package = resolvePackage({ mainFilePath: packagePath });
+        let packagePath = path.join(resolvedDir, "package.json");
+        let package = resolvePackage({ mainFilePath: packagePath });
         let resolvedPath = package? path.join(resolvedDir, package.main) : null;
         packagePath = package? packagePath : null;
+        if (!resolvedPath || !packagePath){
+            packagePath = path.join(__dirname,"package.json");
+            package = resolvePackage({ mainFilePath: packagePath });
+            resolvedPath = package? path.join(resolvedDir, package.main) : null;
+            packagePath = package? packagePath : null;
+        }
         return { resolvedPath, packagePath };
     }
 };
@@ -71,64 +77,58 @@ const installModule = ({ moduleName }) => {
     });
 };
 
-const getPackageInfo = ({ dirPath, packagePath }) => {
+const getPackage = ({ dirPath, packagePath }) => {
     if (!packagePath && dirPath){
         packagePath = path.join(dirPath, "package.json");
     }
-    const info = resolvePackage({ mainFilePath: packagePath });
-    info.friendlyName = formatComponentName(info.name);
-    return info;
+    return resolvePackage({ mainFilePath: packagePath });
 };
 
-const getModuleInfo = ({ moduleName }) => {
-    let info = { 
+const getComponentConfig = ({ moduleName }) => {
+    if (!moduleName){
+        moduleName = path.basename(path.join(__dirname,"../../"));
+    }
+    let component = {
         packagePath: null, 
         resolvedPath: null,
         name: null,
-        friendlyName: null
+        friendlyName: null,
+        parentName: null
     };
-    ({ packagePath: info.packagePath, resolvedPath: info.resolvedPath } = resolveModule(moduleName));
-    if (!info.packagePath || !info.resolvedPath){
-        return info;
+    ({ packagePath: component.packagePath, resolvedPath: component.resolvedPath } = resolveModule(moduleName));
+    if (!component.packagePath || !component.resolvedPath){
+        return component;
     }
-    ({ 
-        name: info.name,
-        parentName: info.parentName,
-        friendlyName: info.friendlyName
-    } = getPackageInfo({ packagePath: info.packagePath }));
-    return info;
+    ({ name: component.name, component } = getPackage({ packagePath: component.packagePath }));
+    component.friendlyName = formatComponentName(component.name);
+    return component;
 };
+
 let loadingComponets = [];
 let registeredComponets = [];
 const references = {
     config: {}
 };
-module.exports = {
-    register: async ({ componentPackagePath }) => {
-        if (!componentPackagePath){
-            throw new Error("missing parameter: componentPackagePath");
-        }
-        if (!fs.existsSync(componentPackagePath)){
-            throw new Error(`package: ${componentPackagePath} does not exist.`);
-        }
-        let componentModulePackage = getPackageInfo({ packagePath: componentPackagePath });
-        await logging.register({ packageJson: componentModulePackage });
 
-        const newComponent = utils.getJSONObject(utils.getJSONString(componentModulePackage));
+module.exports = {
+    register: async () => {
+        let componentConfig = getComponentConfig();
+        await logging.register({ packageJson: componentConfig });
+        const newComponent = utils.getJSONObject(utils.getJSONString(componentConfig));
         newComponent.subscribe = async ({ name, overwriteDelegate = true }, callback) => {
-            componentModulePackage = getPackageInfo({ packagePath: componentPackagePath });
-            return await delegate.register({ context: componentModulePackage.name, name, overwriteDelegate }, callback);
+            componentConfig = getComponentConfig({ moduleName: componentConfig.name });
+            return await delegate.register({ context: componentConfig.name, name, overwriteDelegate }, callback);
         };
         newComponent.publish = async ( { name, wildcard }, params) => {
-            componentModulePackage = getPackageInfo({ packagePath: componentPackagePath });
-            return await delegate.call({ context: componentModulePackage.parentName, name, wildcard }, params);
+            componentConfig = getComponentConfig({ moduleName: componentConfig.name });
+            return await delegate.call({ context: componentConfig.parentName, name, wildcard }, params);
         };
         newComponent.log = (message, data = null) => {
-            componentModulePackage = getPackageInfo({ packagePath: componentPackagePath });
-            return logging.write(componentModulePackage.name, message, data);
+            componentConfig = getComponentConfig({ moduleName: componentConfig.name });
+            return logging.write(componentConfig.name, message, data);
         };
         const results = {};
-        results[formatComponentName(componentModulePackage.name)] = newComponent;
+        results[formatComponentName(componentConfig.name)] = newComponent;
         registeredComponets.push(newComponent);
         return results;
     },
@@ -138,13 +138,13 @@ module.exports = {
                 throw new Error("missing parameter: moduleName");
             }
             loadingComponets.push(moduleName);
-            let moduleInfo = getModuleInfo({ moduleName });
-            if (!moduleInfo.resolvedPath || !moduleInfo.packagePath){
+            let componentConfig = getComponentConfig({ moduleName });
+            if (!componentConfig.resolvedPath || !componentConfig.packagePath){
                 await installModule({ moduleName });
-                moduleInfo = getModuleInfo({ moduleName });
+                componentConfig = getComponentConfig({ moduleName });
             }
-            references[moduleInfo.friendlyName] =  require(moduleInfo.resolvedPath);
-            references.config[moduleInfo.friendlyName] = moduleInfo;
+            references[componentConfig.friendlyName] =  require(componentConfig.resolvedPath);
+            references.config[componentConfig.friendlyName] = componentConfig;
             const id = setInterval(async ()=> {
                 const latestLoadingModule = loadingComponets[loadingComponets.length-1];
                 if (latestLoadingModule === moduleName) {
