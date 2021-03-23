@@ -126,7 +126,7 @@ module.exports = {
             return await delegate.call({ context: componentConfig.parentName, name, wildcard }, params);
         };
         newComponent.log = (message, data = null) => {
-            componentConfig = getComponentConfig({ moduleName: componentConfig.name });
+            componentConfig = getComponentConfig({ moduleName });
             return logging.write(componentConfig.name, message, data);
         };
         const results = {};
