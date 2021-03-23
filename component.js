@@ -71,8 +71,6 @@ const installModule = ({ moduleName }) => {
 
 const getPackageInfo = ({ dirPath, packagePath }) => {
     const info = {
-        hostname: null,
-        port: null,
         name: null,
         friendlyName: null
     };
@@ -80,8 +78,6 @@ const getPackageInfo = ({ dirPath, packagePath }) => {
         packagePath = path.join(dirPath,"package.json");
     }
     ({ 
-        hostname: info.hostname, 
-        port: info.port,
         name: info.name,
         parentName: info.parentName
     } = resolvePackage( { mainFilePath: packagePath }));
@@ -93,8 +89,6 @@ const getModuleInfo = ({ moduleName }) => {
     let info = { 
         packagePath: null, 
         resolvedPath: null,
-        hostname: null,
-        port: null,
         name: null,
         friendlyName: null
     };
@@ -105,8 +99,6 @@ const getModuleInfo = ({ moduleName }) => {
     ({ 
         name: info.name,
         parentName: info.parentName,
-        hostname: info.hostname,
-        port: info.port, 
         friendlyName: info.friendlyName
     } = getPackageInfo({ packagePath: info.packagePath }));
     return info;
