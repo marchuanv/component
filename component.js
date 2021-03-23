@@ -119,7 +119,7 @@ module.exports = {
     register: async ({ componentPackagePath }) => {
         const newComponent = {};
         if (componentPackagePath){
-            throw new Error("missing parameter: modulePackagePath");
+            throw new Error("missing parameter: componentPackagePath");
         }
         if (!fs.existsSync(componentPackagePath)){
             throw new Error(`package: ${componentPackagePath} does not exist.`);
