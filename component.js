@@ -41,7 +41,8 @@ const resolveModule = (moduleName) => {
             const fileName = path.basename(resolvedPath);
             packagePath = resolvedPath.replace(fileName, "package.json");
         } else {
-            packagePath = path.join(__dirname,"package.json");
+            let resolvedDir = path.join(__dirname,"../../");
+            packagePath = path.join(resolvedDir, "package.json");
             let package = resolvePackage({ mainFilePath: packagePath });
             resolvedPath = package? path.join(resolvedDir, package.main) : null;
             packagePath = package? packagePath : null;
