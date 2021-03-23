@@ -112,8 +112,8 @@ const references = {
 };
 
 module.exports = {
-    register: async () => {
-        let componentConfig = getComponentConfig();
+    register: async ({ moduleName }) => {
+        let componentConfig = getComponentConfig({ moduleName });
         await logging.register({ packageJson: componentConfig });
         const newComponent = utils.getJSONObject(utils.getJSONString(componentConfig));
         newComponent.subscribe = async ({ name, overwriteDelegate = true }, callback) => {
