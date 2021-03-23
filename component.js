@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require('fs');
+const utils = require('utils');
 const { exec } = require("child_process");
 const delegate = require("component.delegate");
 const logging = require("component.logging");
@@ -77,7 +78,7 @@ const getPackageInfo = ({ dirPath, packagePath }) => {
     if (!packagePath && dirPath){
         packagePath = path.join(dirPath,"package.json");
     }
-    ({ 
+    ({
         name: info.name,
         parentName: info.parentName
     } = resolvePackage( { mainFilePath: packagePath }));
@@ -104,12 +105,12 @@ const getModuleInfo = ({ moduleName }) => {
     return info;
 };
 let loadingComponets = [];
+let registeredComponets = [];
 const references = {
     config: {}
 };
 module.exports = {
     register: async ({ componentPackagePath }) => {
-        const newComponent = {};
         if (!componentPackagePath){
             throw new Error("missing parameter: componentPackagePath");
         }
@@ -119,6 +120,7 @@ module.exports = {
         let componentModulePackage = getPackageInfo({ packagePath: componentPackagePath });
         await logging.register({ packageJson: componentModulePackage });
 
+        const newComponent = utils.getJSONObject(utils.getJSONString(componentModulePackage));
         newComponent.subscribe = async ({ name, overwriteDelegate = true }, callback) => {
             componentModulePackage = getPackageInfo({ packagePath: componentPackagePath });
             return await delegate.register({ context: componentModulePackage.name, name, overwriteDelegate }, callback);
@@ -133,6 +135,7 @@ module.exports = {
         };
         const results = {};
         results[formatComponentName(componentModulePackage.name)] = newComponent;
+        registeredComponets.push(newComponent);
         return results;
     },
     load: ({ moduleName }) => {
