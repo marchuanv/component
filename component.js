@@ -34,10 +34,18 @@ const resolvePackage = ({ mainFilePath }) => {
 };
 
 const resolveModule = (moduleName) => {
+    let { resolvedPath, packagePath } = {};
     try {
-        let resolvedPath = require.resolve(moduleName);
-        const fileName = path.basename(resolvedPath);
-        let packagePath = resolvedPath.replace(fileName, "package.json");
+        if (moduleName){
+            resolvedPath = require.resolve(moduleName);
+            const fileName = path.basename(resolvedPath);
+            packagePath = resolvedPath.replace(fileName, "package.json");
+        } else {
+            packagePath = path.join(__dirname,"package.json");
+            let package = resolvePackage({ mainFilePath: packagePath });
+            resolvedPath = package? path.join(resolvedDir, package.main) : null;
+            packagePath = package? packagePath : null;
+        }
         return { resolvedPath, packagePath };
     } catch(err) {
         let resolvedDir = path.join(__dirname,"node_modules", moduleName);
@@ -45,16 +53,10 @@ const resolveModule = (moduleName) => {
             resolvedDir = path.join(__dirname,"../");
             resolvedDir = path.join(resolvedDir, moduleName);
         }
-        let packagePath = path.join(resolvedDir, "package.json");
+        packagePath = path.join(resolvedDir, "package.json");
         let package = resolvePackage({ mainFilePath: packagePath });
-        let resolvedPath = package? path.join(resolvedDir, package.main) : null;
+        resolvedPath = package? path.join(resolvedDir, package.main) : null;
         packagePath = package? packagePath : null;
-        if (!resolvedPath || !packagePath){
-            packagePath = path.join(__dirname,"package.json");
-            package = resolvePackage({ mainFilePath: packagePath });
-            resolvedPath = package? path.join(resolvedDir, package.main) : null;
-            packagePath = package? packagePath : null;
-        }
         return { resolvedPath, packagePath };
     }
 };
@@ -85,9 +87,6 @@ const getPackage = ({ dirPath, packagePath }) => {
 };
 
 const getComponentConfig = ({ moduleName }) => {
-    if (!moduleName){
-        moduleName = path.basename(path.join(__dirname,"../../"));
-    }
     let component = {
         packagePath: null, 
         resolvedPath: null,
