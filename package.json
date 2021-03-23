@@ -1,11 +1,8 @@
 {
   "name": "component",
-  "hostname": "localhost",
-  "port": 3000,
   "version": "1.0.0",
   "description": "base module for all components",
   "main": "component.js",
-  "gitUsername": "marchuanv",
   "engines": {
     "node": "14.12.0",
     "npm": "6.14.8"
@@ -24,5 +21,6 @@
     "utils": "github:marchuanv/utils",
     "component.delegate": "github:marchuanv/component.delegate",
     "component.logging": "github:marchuanv/component.logging"
-  }
+  },
+  "component": { "gitUsername": "marchuanv" }
 }

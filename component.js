@@ -4,7 +4,8 @@ const utils = require('utils');
 const { exec } = require("child_process");
 const delegate = require("component.delegate");
 const logging = require("component.logging");
-const { gitUsername } = require("./package.json");
+const { component } = require("./package.json");
+const { gitUsername } = component;
 
 const capitalize = (s) => {
     if (typeof s !== 'string') return '';
