@@ -1,11 +1,36 @@
 const path = require("path");
 const fs = require('fs');
-const utils = require('utils');
 const { exec } = require("child_process");
 const delegate = require("component.delegate");
 const logging = require("component.logging");
 const { component } = require("./package.json");
 const { gitUsername } = component;
+
+function Component(moduleName){
+    this.moduleName = moduleName;
+    this.config = getComponentConfig({ moduleName });
+    await logging.register({ packageJson: componentConfig });
+};
+
+Component.prototype.subscribe = async function({ name }, callback) {
+    const config = getComponentConfig({ moduleName });
+    return await delegate.register({ context: config.name, name, overwriteDelegate: true }, callback);
+};
+
+Component.prototype.publish =  async function({ name, wildcard }, params) {
+    const config = getComponentConfig({ moduleName });
+    const results = [];
+    for(const context of config.parent){
+        const result = await delegate.call({ context, name, wildcard }, params);
+        results.push(result);
+    };
+    return results.length === 1? results[0] : results;
+};
+
+Component.prototype.log = async function(message, data = null) {
+    const config = getComponentConfig({ moduleName });
+    return logging.write(config.name, message, data);
+};
 
 const capitalize = (s) => {
     if (typeof s !== 'string') return '';
@@ -87,7 +112,7 @@ const getPackage = ({ dirPath, packagePath }) => {
     return resolvePackage({ mainFilePath: packagePath });
 };
 
-const loadComponentConfig = async ({ moduleName }) => {
+const getComponentConfig = ({ moduleName }) => {
     let config = {
         packagePath: null, 
         resolvedPath: null,
@@ -103,7 +128,6 @@ const loadComponentConfig = async ({ moduleName }) => {
     component.name = name;
     Object.assign(config, component);
     config.friendlyName = formatComponentName(config.name);
-    await delegate.call({ context: "config", name: moduleName }, config);
     return config;
 };
 
@@ -115,33 +139,13 @@ const references = {
 
 module.exports = {
     register: async ({ moduleName }) => {
-        let componentConfig = await loadComponentConfig({ moduleName });
-        await logging.register({ packageJson: componentConfig });
-        const newComponent = utils.getJSONObject(utils.getJSONString(componentConfig));
-        newComponent.subscribe = async ({ name }, callback) => {
-            componentConfig = await loadComponentConfig({ moduleName });
-            return await delegate.register({ context: componentConfig.name, name, overwriteDelegate: true }, callback);
-        };
-        newComponent.publish = async ( { name, wildcard }, params) => {
-            componentConfig = await loadComponentConfig({ moduleName });
-            const results = [];
-            for(const context of componentConfig.parent){
-                const result = await delegate.call({ context, name, wildcard }, params);
-                results.push(result);
-            };
-            return results.length === 1? results[0] : results;
-        };
-        newComponent.log = async (message, data = null) => {
-            componentConfig = await loadComponentConfig({ moduleName });
-            return await logging.write(componentConfig.name, message, data);
-        };
+        const newComponent = new Component(moduleName);
         const results = {};
         results[formatComponentName(componentConfig.name)] = newComponent;
-        registeredComponets.push(newComponent);
         return results;
     },
-    on: async ({ eventName, moduleName }, callback) => {
-        return await delegate.register({ context: eventName, name: moduleName, overwriteDelegate: true }, callback);
+    onInstall: async ({ name }, callback) => {
+        return await delegate.register({ context: "global", name, overwriteDelegate: true }, callback);
     },
     load: ({ moduleName }) => {
         return new Promise(async (resolve) => {
@@ -149,10 +153,11 @@ module.exports = {
                 throw new Error("missing parameter: moduleName");
             }
             loadingComponets.push(moduleName);
-            let componentConfig = await loadComponentConfig({ moduleName });
+            let componentConfig = getComponentConfig({ moduleName });
             if (!componentConfig.resolvedPath || !componentConfig.packagePath){
                 await installModule({ moduleName });
-                componentConfig = await loadComponentConfig({ moduleName });
+                await delegate.call({ context: "global", name: moduleName, wildcard }, { event: "installed" });
+                componentConfig = getComponentConfig({ moduleName });
             }
             references[componentConfig.friendlyName] =  require(componentConfig.resolvedPath);
             references.config[componentConfig.friendlyName] = componentConfig;
