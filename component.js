@@ -135,10 +135,10 @@ let componentRegister = [];
 module.exports = {
     register: async (componentModule = "") => {
         let requireInstall = typeof componentModule !== module ;
-        if (typeof componentModule !== "string" && typeof componentModule !== module ){
-            throw new Error("invalid parameter value for moduleName");
+        if (typeof componentModule !== "string" && typeof componentModule !== module || !componentModule){
+            throw new Error("invalid parameter: componentModule");
         }
-        const config = getComponentConfig({ moduleName: componentModule.name });
+        const config = getComponentConfig({ moduleName: componentModule });
         let registeredComponent = componentRegister.find( c => c.name === config.name);
         if (!registeredComponent){
             const { gitUsername } = component;
