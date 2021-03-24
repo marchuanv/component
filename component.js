@@ -166,10 +166,10 @@ module.exports = {
                 await registeredComponent.install();
                 await delegate.call({ context: registeredComponent.name, name: "installed" }, {});
             }
-            await registeredComponent.loadConfig();
             componentRegister.push(registeredComponent);
             await logging.register({ moduleName: registeredComponent.name });
         }
+        await registeredComponent.loadConfig();
         const results = {};
         results[formatComponentName(registeredComponent.name)] = registeredComponent;
         return results;
