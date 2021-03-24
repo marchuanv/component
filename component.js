@@ -48,7 +48,6 @@ Component.prototype.install = function() {
         let moduleToInstall = `${this.username}/${this.name}`;
         if (await this.isInstalled()){
             await this.log(`${moduleToInstall} installed.`);
-            await this.loadConfig();
             return await resolve();
         } else if (!this.installing) {
             await this.log(`installing ${moduleToInstall}`);
