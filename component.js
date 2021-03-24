@@ -17,7 +17,7 @@ Component.prototype.subscribe = async function({ name }, callback) {
 };
 
 Component.prototype.publish =  async function({ name, wildcard }, params) {
-    const config = getComponentConfig(this.name);
+    const config = await getComponentConfig(this.name);
     const results = [];
     for(const context of config.parent){
         const result = await delegate.call({ context, name, wildcard }, params);
@@ -30,8 +30,8 @@ Component.prototype.log = async function(message, data = null) {
     return logging.write(this.name, message, data);
 };
 
-Component.prototype.isInstalled = function() {
-    let config = getComponentConfig(this.name);
+Component.prototype.isInstalled = async function() {
+    let config = await getComponentConfig(this.name);
     if (config.resolvedPath && config.packagePath) {
         this.installing = false;
         return true;
@@ -39,8 +39,8 @@ Component.prototype.isInstalled = function() {
     return false;
 };
 
-Component.prototype.loadConfig = function() {
-    let config = getComponentConfig(this.name);
+Component.prototype.loadConfig = async function() {
+    let config = await getComponentConfig(this.name);
     Object.assign(this, config);
 };
 
@@ -49,7 +49,7 @@ Component.prototype.install = function() {
         let moduleToInstall = `${this.username}/${this.name}`;
         if (this.isInstalled()){
             await this.log(`${moduleToInstall} installed.`);
-            this.loadConfig();
+            await this.loadConfig();
             return await resolve();
         } else if (!this.installing) {
             await this.log(`installing ${moduleToInstall}`);
@@ -109,10 +109,10 @@ const resolveModule = (componentModule) => {
         }
 
         if (!resolvedPath && !packagePath){
-            resolvedDir = path.join(__dirname,"node_modules", componentModule);
+            resolvedDir = path.join(__dirname,"node_modules", moduleName);
             if (__dirname.indexOf("node_modules") > -1){
                 resolvedDir = path.join(__dirname,"../");
-                resolvedDir = path.join(resolvedDir, componentModule);
+                resolvedDir = path.join(resolvedDir, moduleName);
             }
             packagePath = path.join(resolvedDir, "package.json");
             let package = resolvePackage({ mainFilePath: packagePath });
@@ -131,7 +131,7 @@ const getPackage = ({ dirPath, packagePath }) => {
     return resolvePackage({ mainFilePath: packagePath });
 };
 
-const getComponentConfig = (componentModule) => {
+const getComponentConfig = async (componentModule) => {
     let config = {
         packagePath: null, 
         resolvedPath: null,
@@ -147,6 +147,7 @@ const getComponentConfig = (componentModule) => {
     component.name = name;
     Object.assign(config, component);
     config.friendlyName = formatComponentName(config.name);
+    await delegate.call({ context: config.name, name: "config" }, config);
     return config;
 };
 
@@ -156,7 +157,7 @@ module.exports = {
         if (!componentModule){
             throw new Error("invalid parameter: componentModule");
         }
-        const config = getComponentConfig(componentModule);
+        const config = await getComponentConfig(componentModule);
         let registeredComponent = componentRegister.find( c => c.name === (config && config.name));
         if (!registeredComponent){
             const { gitUsername } = component;
