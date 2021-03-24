@@ -87,7 +87,7 @@ const getPackage = ({ dirPath, packagePath }) => {
     return resolvePackage({ mainFilePath: packagePath });
 };
 
-const loadComponentConfig = ({ moduleName }) => {
+const loadComponentConfig = async ({ moduleName }) => {
     let config = {
         packagePath: null, 
         resolvedPath: null,
@@ -115,15 +115,15 @@ const references = {
 
 module.exports = {
     register: async ({ moduleName }) => {
-        let componentConfig = loadComponentConfig({ moduleName });
+        let componentConfig = await loadComponentConfig({ moduleName });
         await logging.register({ packageJson: componentConfig });
         const newComponent = utils.getJSONObject(utils.getJSONString(componentConfig));
         newComponent.subscribe = async ({ name }, callback) => {
-            componentConfig = loadComponentConfig({ moduleName });
+            componentConfig = await loadComponentConfig({ moduleName });
             return await delegate.register({ context: componentConfig.name, name, overwriteDelegate: true }, callback);
         };
         newComponent.publish = async ( { name, wildcard }, params) => {
-            componentConfig = loadComponentConfig({ moduleName });
+            componentConfig = await loadComponentConfig({ moduleName });
             const results = [];
             for(const context of componentConfig.parent){
                 const result = await delegate.call({ context, name, wildcard }, params);
@@ -132,7 +132,7 @@ module.exports = {
             return results.length === 1? results[0] : results;
         };
         newComponent.log = (message, data = null) => {
-            componentConfig = loadComponentConfig({ moduleName });
+            componentConfig = await loadComponentConfig({ moduleName });
             return logging.write(componentConfig.name, message, data);
         };
         const results = {};
@@ -149,10 +149,10 @@ module.exports = {
                 throw new Error("missing parameter: moduleName");
             }
             loadingComponets.push(moduleName);
-            let componentConfig = loadComponentConfig({ moduleName });
+            let componentConfig = await loadComponentConfig({ moduleName });
             if (!componentConfig.resolvedPath || !componentConfig.packagePath){
                 await installModule({ moduleName });
-                componentConfig = loadComponentConfig({ moduleName });
+                componentConfig = await loadComponentConfig({ moduleName });
             }
             references[componentConfig.friendlyName] =  require(componentConfig.resolvedPath);
             references.config[componentConfig.friendlyName] = componentConfig;
