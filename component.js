@@ -126,9 +126,7 @@ module.exports = {
             const results = [];
             for(const context of componentConfig.parent){
                 const result = await delegate.call({ context, name, wildcard }, params);
-                if (result && !result.message && !result.stack){
-                    results.push({ context, result });
-                }
+                results.push(result);
             };
             return results.length === 1? results[0] : results;
         };
