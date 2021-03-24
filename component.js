@@ -139,8 +139,8 @@ module.exports = {
         registeredComponets.push(newComponent);
         return results;
     },
-    subscribe: async ({ name }, callback) => {
-        return await delegate.register({ context: "global", name, overwriteDelegate: true }, callback);
+    onInstalled: async ({ moduleName }, callback) => {
+        return await delegate.register({ context: "global", name: moduleName, overwriteDelegate: true }, callback);
     },
     load: ({ moduleName }) => {
         return new Promise(async (resolve) => {
@@ -151,7 +151,7 @@ module.exports = {
             let componentConfig = getComponentConfig({ moduleName });
             if (!componentConfig.resolvedPath || !componentConfig.packagePath){
                 await installModule({ moduleName });
-                await delegate.call({ context: "global", name: moduleName, wildcard }, { event: "installed" });
+                await delegate.call({ context: "global", name: moduleName, wildcard }, {});
                 componentConfig = getComponentConfig({ moduleName });
             }
             references[componentConfig.friendlyName] =  require(componentConfig.resolvedPath);
