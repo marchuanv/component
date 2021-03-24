@@ -130,7 +130,7 @@ module.exports = {
                     results.push({ context, result });
                 }
             };
-            return results;
+            return results.length === 1? results[0] : results;
         };
         newComponent.log = (message, data = null) => {
             componentConfig = getComponentConfig({ moduleName });
