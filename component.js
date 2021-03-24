@@ -17,9 +17,8 @@ Component.prototype.subscribe = async function({ name }, callback) {
 };
 
 Component.prototype.publish =  async function({ name, wildcard }, params) {
-    const config = await getComponentConfig(this.name);
     const results = [];
-    for(const context of config.parent){
+    for(const context of this.parent){
         const result = await delegate.call({ context, name, wildcard }, params);
         results.push(result);
     };
