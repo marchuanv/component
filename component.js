@@ -39,13 +39,17 @@ Component.prototype.isInstalled = function() {
     return false;
 };
 
+Component.prototype.loadConfig = function() {
+    let config = getComponentConfig(this.name);
+    Object.assign(this, config);
+};
+
 Component.prototype.install = function() {
     return new Promise(async(resolve) => {
         let moduleToInstall = `${this.username}/${this.name}`;
         if (this.isInstalled()){
             await this.log(`${moduleToInstall} installed.`);
-            let config = getComponentConfig(this.name);
-            Object.assign(this, config);
+            this.loadConfig();
             return await resolve();
         } else if (!this.installing) {
             await this.log(`installing ${moduleToInstall}`);
@@ -161,6 +165,7 @@ module.exports = {
                 await registeredComponent.install();
                 await delegate.call({ context: registeredComponent.name, name: "installed" }, {});
             }
+            await registeredComponent.loadConfig();
             componentRegister.push(registeredComponent);
             await logging.register({ moduleName: registeredComponent.name });
         }
