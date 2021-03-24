@@ -140,8 +140,8 @@ module.exports = {
         registeredComponets.push(newComponent);
         return results;
     },
-    onConfigLoad: async ({ moduleName }, callback) => {
-        return await delegate.register({ context: "config", name: moduleName, overwriteDelegate: true }, callback);
+    on: async ({ eventName, moduleName }, callback) => {
+        return await delegate.register({ context: eventName, name: moduleName, overwriteDelegate: true }, callback);
     },
     load: ({ moduleName }) => {
         return new Promise(async (resolve) => {
