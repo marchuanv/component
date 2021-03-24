@@ -9,7 +9,7 @@ const { type } = require("os");
 function Component( { moduleName, username }){
     this.name = moduleName;
     this.username = username;
-    this.installed = false;
+    this.installing = false;
 };
 
 Component.prototype.subscribe = async function({ name }, callback) {
@@ -30,19 +30,27 @@ Component.prototype.log = async function(message, data = null) {
     return logging.write(this.name, message, data);
 };
 
+Component.prototype.isInstalled = function() {
+    let config = getComponentConfig(this.name);
+    if (config.resolvedPath && config.packagePath) {
+        this.installing = false;
+        return true;
+    }
+    return false;
+};
+
 Component.prototype.install = function() {
     return new Promise(async(resolve) => {
         let moduleToInstall = `${this.username}/${this.name}`;
-        let config = getComponentConfig(this.name);
-        if (config.resolvedPath){
-            this.installed = true;
+        if (this.isInstalled()){
             await this.log(`${moduleToInstall} installed.`);
+            let config = getComponentConfig(this.name);
             Object.assign(this, config);
             return await resolve();
-        } else if (!this.installed) {
+        } else if (!this.installing) {
             await this.log(`installing ${moduleToInstall}`);
             exec(`npm install ${moduleToInstall} --no-save --no-package-lock`, () => {});
-            this.installed = true;
+            this.installing = true;
         }
         setTimeout( async () => {
             resolve(await this.install());
@@ -77,6 +85,7 @@ const resolvePackage = ({ mainFilePath }) => {
 };
 
 const resolveModule = (componentModule) => {
+    const moduleName = typeof componentModule === "string" ? componentModule: path.basename(componentModule.path);
     let { resolvedPath, packagePath } = {};
     try {
         resolvedPath = require.resolve(componentModule);
@@ -84,25 +93,30 @@ const resolveModule = (componentModule) => {
         packagePath = resolvedPath.replace(fileName, "package.json");
         return { resolvedPath, packagePath };
     } catch(err) {
-        let resolvedDir = path.join(__dirname,"node_modules", componentModule);
-        if (__dirname.indexOf("node_modules") > -1){
-            resolvedDir = path.join(__dirname,"../");
-            resolvedDir = path.join(resolvedDir, componentModule);
-        }
+
+        let resolvedDir = path.join(__dirname,"../../");
         packagePath = path.join(resolvedDir, "package.json");
         let package = resolvePackage({ mainFilePath: packagePath });
         resolvedPath = package? path.join(resolvedDir, package.main) : null;
         packagePath = package? packagePath : null;
+        if (package.name !== moduleName){
+            resolvedPath = null;
+            packagePath = null;
+        }
 
         if (!resolvedPath && !packagePath){
-            let resolvedDir = path.join(__dirname,"../../");
+            resolvedDir = path.join(__dirname,"node_modules", componentModule);
+            if (__dirname.indexOf("node_modules") > -1){
+                resolvedDir = path.join(__dirname,"../");
+                resolvedDir = path.join(resolvedDir, componentModule);
+            }
             packagePath = path.join(resolvedDir, "package.json");
             let package = resolvePackage({ mainFilePath: packagePath });
             resolvedPath = package? path.join(resolvedDir, package.main) : null;
-            packagePath = package? packagePath : null;
+            packagePath = package? packagePath : null;    
         }
 
-        return { resolvedPath, packagePath };
+        return { resolvedPath, packagePath, name: moduleName };
     }
 };
 
@@ -121,7 +135,7 @@ const getComponentConfig = (componentModule) => {
         friendlyName: null,
         parentName: null
     };
-    ({ packagePath: config.packagePath, resolvedPath: config.resolvedPath } = resolveModule(componentModule));
+    ({ packagePath: config.packagePath, resolvedPath: config.resolvedPath , name: config.name } = resolveModule(componentModule));
     if (!config.packagePath || !config.resolvedPath){
         return config;
     }
@@ -135,21 +149,17 @@ const getComponentConfig = (componentModule) => {
 let componentRegister = [];
 module.exports = {
     register: async (componentModule = "") => {
-        const moduleName = typeof componentModule === "string" ? componentModule: path.basename(componentModule.path);
-        const requireInstall = typeof componentModule === "string";
-        if (!moduleName){
+        if (!componentModule){
             throw new Error("invalid parameter: componentModule");
         }
-        const config = getComponentConfig(moduleName);
-        let registeredComponent = componentRegister.find( c => c.name === config.name);
+        const config = getComponentConfig(componentModule);
+        let registeredComponent = componentRegister.find( c => c.name === (config && config.name));
         if (!registeredComponent){
             const { gitUsername } = component;
-            if (requireInstall) { //just setup component intent was not to install
-                registeredComponent = new Component({ moduleName, username: gitUsername });
+            registeredComponent = new Component({ moduleName: config.name, username: gitUsername });
+            if (!registeredComponent.isInstalled()) {
                 await registeredComponent.install();
                 await delegate.call({ context: registeredComponent.name, name: "installed" }, {});
-            } else {
-                registeredComponent = new Component({ moduleName: config.name, username: gitUsername });
             }
             componentRegister.push(registeredComponent);
             await logging.register({ moduleName: registeredComponent.name });
