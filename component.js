@@ -151,7 +151,7 @@ module.exports = {
             let componentConfig = getComponentConfig({ moduleName });
             if (!componentConfig.resolvedPath || !componentConfig.packagePath){
                 await installModule({ moduleName });
-                await delegate.call({ context: "global", name: moduleName, wildcard }, {});
+                await delegate.call({ context: "global", name: moduleName }, {});
                 componentConfig = getComponentConfig({ moduleName });
             }
             references[componentConfig.friendlyName] =  require(componentConfig.resolvedPath);
