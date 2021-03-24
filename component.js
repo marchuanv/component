@@ -47,7 +47,7 @@ Component.prototype.loadConfig = async function() {
 Component.prototype.install = function() {
     return new Promise(async(resolve) => {
         let moduleToInstall = `${this.username}/${this.name}`;
-        if (this.isInstalled()){
+        if (await this.isInstalled()){
             await this.log(`${moduleToInstall} installed.`);
             await this.loadConfig();
             return await resolve();
@@ -162,7 +162,7 @@ module.exports = {
         if (!registeredComponent){
             const { gitUsername } = component;
             registeredComponent = new Component({ moduleName: config.name, username: gitUsername });
-            if (!registeredComponent.isInstalled()) {
+            if (!(await registeredComponent.isInstalled())) {
                 await registeredComponent.install();
                 await delegate.call({ context: registeredComponent.name, name: "installed" }, {});
             }
