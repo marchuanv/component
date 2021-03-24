@@ -38,7 +38,7 @@ Component.prototype.isInstalled = async function() {
     return false;
 };
 
-Component.prototype.loadConfig = async function() {
+Component.prototype.reload = async function() {
     let config = await getComponentConfig(this.name);
     Object.assign(this, config);
 };
@@ -145,7 +145,6 @@ const getComponentConfig = async (componentModule) => {
     component.name = name;
     Object.assign(config, component);
     config.friendlyName = formatComponentName(config.name);
-    await delegate.call({ context: config.name, name: "config" }, config);
     return config;
 };
 
@@ -167,7 +166,7 @@ module.exports = {
             componentRegister.push(registeredComponent);
             await logging.register({ moduleName: registeredComponent.name });
         }
-        await registeredComponent.loadConfig();
+        await registeredComponent.reload();
         const results = {};
         results[formatComponentName(registeredComponent.name)] = registeredComponent;
         return results;
