@@ -131,9 +131,9 @@ module.exports = {
             };
             return results.length === 1? results[0] : results;
         };
-        newComponent.log = (message, data = null) => {
+        newComponent.log = async (message, data = null) => {
             componentConfig = await loadComponentConfig({ moduleName });
-            return logging.write(componentConfig.name, message, data);
+            return await logging.write(componentConfig.name, message, data);
         };
         const results = {};
         results[formatComponentName(componentConfig.name)] = newComponent;
