@@ -7,18 +7,15 @@ const { component } = require("./package.json");
 const { gitUsername } = component;
 
 function Component(moduleName){
-    this.moduleName = moduleName;
-    this.config = getComponentConfig({ moduleName });
-    await logging.register({ packageJson: componentConfig });
+    this.name = moduleName;
 };
 
 Component.prototype.subscribe = async function({ name }, callback) {
-    const config = getComponentConfig({ moduleName });
-    return await delegate.register({ context: config.name, name, overwriteDelegate: true }, callback);
+    return await delegate.register({ context: this.name, name, overwriteDelegate: true }, callback);
 };
 
 Component.prototype.publish =  async function({ name, wildcard }, params) {
-    const config = getComponentConfig({ moduleName });
+    const config = getComponentConfig({ moduleName: this,name });
     const results = [];
     for(const context of config.parent){
         const result = await delegate.call({ context, name, wildcard }, params);
@@ -28,8 +25,7 @@ Component.prototype.publish =  async function({ name, wildcard }, params) {
 };
 
 Component.prototype.log = async function(message, data = null) {
-    const config = getComponentConfig({ moduleName });
-    return logging.write(config.name, message, data);
+    return logging.write(this.name, message, data);
 };
 
 const capitalize = (s) => {
@@ -131,15 +127,21 @@ const getComponentConfig = ({ moduleName }) => {
     return config;
 };
 
-let loadingComponets = [];
-let registeredComponets = [];
+let componentRegister = [];
 const references = {
     config: {}
 };
 
 module.exports = {
     register: async ({ moduleName }) => {
-        const newComponent = new Component(moduleName);
+        const config = getComponentConfig({ moduleName });
+        const foundComponent = componentRegister.find( c => c.name === config.name);
+        if (foundComponent){
+            return foundComponent;
+        }
+        const newComponent = new Component(config.name);
+        componentRegister.push(newComponent);
+        await logging.register({ packageJson: config });
         const results = {};
         results[formatComponentName(componentConfig.name)] = newComponent;
         return results;
