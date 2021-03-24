@@ -87,7 +87,7 @@ const getPackage = ({ dirPath, packagePath }) => {
     return resolvePackage({ mainFilePath: packagePath });
 };
 
-const getComponentConfig = ({ moduleName }) => {
+const loadComponentConfig = ({ moduleName }) => {
     let config = {
         packagePath: null, 
         resolvedPath: null,
@@ -103,6 +103,7 @@ const getComponentConfig = ({ moduleName }) => {
     component.name = name;
     Object.assign(config, component);
     config.friendlyName = formatComponentName(config.name);
+    await delegate.call({ context: "config", name: moduleName }, config);
     return config;
 };
 
@@ -114,15 +115,15 @@ const references = {
 
 module.exports = {
     register: async ({ moduleName }) => {
-        let componentConfig = getComponentConfig({ moduleName });
+        let componentConfig = loadComponentConfig({ moduleName });
         await logging.register({ packageJson: componentConfig });
         const newComponent = utils.getJSONObject(utils.getJSONString(componentConfig));
         newComponent.subscribe = async ({ name }, callback) => {
-            componentConfig = getComponentConfig({ moduleName });
+            componentConfig = loadComponentConfig({ moduleName });
             return await delegate.register({ context: componentConfig.name, name, overwriteDelegate: true }, callback);
         };
         newComponent.publish = async ( { name, wildcard }, params) => {
-            componentConfig = getComponentConfig({ moduleName });
+            componentConfig = loadComponentConfig({ moduleName });
             const results = [];
             for(const context of componentConfig.parent){
                 const result = await delegate.call({ context, name, wildcard }, params);
@@ -131,7 +132,7 @@ module.exports = {
             return results.length === 1? results[0] : results;
         };
         newComponent.log = (message, data = null) => {
-            componentConfig = getComponentConfig({ moduleName });
+            componentConfig = loadComponentConfig({ moduleName });
             return logging.write(componentConfig.name, message, data);
         };
         const results = {};
@@ -139,8 +140,8 @@ module.exports = {
         registeredComponets.push(newComponent);
         return results;
     },
-    onInstalled: async ({ moduleName }, callback) => {
-        return await delegate.register({ context: "global", name: moduleName, overwriteDelegate: true }, callback);
+    onConfigLoad: async ({ moduleName }, callback) => {
+        return await delegate.register({ context: "config", name: moduleName, overwriteDelegate: true }, callback);
     },
     load: ({ moduleName }) => {
         return new Promise(async (resolve) => {
@@ -148,11 +149,10 @@ module.exports = {
                 throw new Error("missing parameter: moduleName");
             }
             loadingComponets.push(moduleName);
-            let componentConfig = getComponentConfig({ moduleName });
+            let componentConfig = loadComponentConfig({ moduleName });
             if (!componentConfig.resolvedPath || !componentConfig.packagePath){
                 await installModule({ moduleName });
-                await delegate.call({ context: "global", name: moduleName }, {});
-                componentConfig = getComponentConfig({ moduleName });
+                componentConfig = loadComponentConfig({ moduleName });
             }
             references[componentConfig.friendlyName] =  require(componentConfig.resolvedPath);
             references.config[componentConfig.friendlyName] = componentConfig;
