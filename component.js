@@ -137,7 +137,6 @@ const getComponentConfig = async (componentModule) => {
         resolvedPath: null,
         name: null,
         friendlyName: null,
-        parentName: null
     };
     ({ packagePath: config.packagePath, resolvedPath: config.resolvedPath , name: config.name } = resolveModule(componentModule));
     if (!config.packagePath || !config.resolvedPath){
