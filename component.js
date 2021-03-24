@@ -4,12 +4,12 @@ const { exec } = require("child_process");
 const delegate = require("component.delegate");
 const { component } = require("./package.json");
 const logging = require("component.logging");
+const { type } = require("os");
 
 function Component( { moduleName, username }){
     this.name = moduleName;
     this.username = username;
-    this.startPath = null;
-    this.installing = false;
+    this.installed = false;
 };
 
 Component.prototype.subscribe = async function({ name }, callback) {
@@ -35,18 +35,18 @@ Component.prototype.install = function() {
         let moduleToInstall = `${this.username}/${this.name}`;
         let config = getComponentConfig({ moduleName: this.name });
         if (config.resolvedPath){
-            this.installing = false;
+            this.installed = true;
             await this.log(`${moduleToInstall} installed.`);
-            this.startPath = config.resolvedPath;
-            await resolve();
-        } else if (!this.installing) {
+            Object.assign(this, config);
+            return await resolve();
+        } else if (!this.installed) {
             await this.log(`installing ${moduleToInstall}`);
             exec(`npm install ${moduleToInstall} --no-save --no-package-lock`, () => {});
-            this.installing = true;
-            setTimeout( async () => {
-                await this.install();
-            }, 1000);
+            this.installed = true;
         }
+        setTimeout( async () => {
+            resolve(await this.install());
+        }, 1000);
     });
 };
 
@@ -133,20 +133,24 @@ const getComponentConfig = ({ moduleName }) => {
 
 let componentRegister = [];
 module.exports = {
-    register: async ({ moduleName }) => {
-        const config = getComponentConfig({ moduleName });
-        const registeredComponent = componentRegister.find( c => c.name === config.name);
-        if (registeredComponent){
-            return registeredComponent;
+    register: async (moduleName = "") => {
+        if (typeof moduleName !== "string"){
+            throw new Error("invalid parameter value for moduleName");
         }
-        const { gitUsername } = component;
-        const newComponent = new Component({ moduleName: config.name || moduleName, username: gitUsername });
-        await newComponent.install();
-        await delegate.call({ context: moduleName, name: "installed" }, {});
-        componentRegister.push(newComponent);
-        await logging.register({ packageJson: config });
+        const config = getComponentConfig({ moduleName });
+        let registeredComponent = componentRegister.find( c => c.name === config.name);
+        if (!registeredComponent){
+            const { gitUsername } = component;
+            registeredComponent = new Component({ moduleName: config.name || moduleName, username: gitUsername });
+            if (moduleName) { //just setup component intent was not to install
+                await registeredComponent.install();
+                await delegate.call({ context: registeredComponent.name, name: "installed" }, {});
+            }
+            componentRegister.push(registeredComponent);
+            await logging.register({ moduleName: registeredComponent.name });
+        }
         const results = {};
-        results[formatComponentName(componentConfig.name)] = newComponent;
+        results[formatComponentName(registeredComponent.name)] = registeredComponent;
         return results;
     },
     on: async ({ eventName, moduleName }, callback) => {
@@ -157,7 +161,7 @@ module.exports = {
         if (!registeredComponent) {
             throw new Error(`component: "${moduleName}" is not registered.`);
         }
-        const required = require(registeredComponent.startPath);
+        const required = require(registeredComponent.resolvedPath);
         await delegate.call({ context: registeredComponent.name, name: "loaded" }, {});
         return required;
     }
