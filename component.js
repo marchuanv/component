@@ -117,9 +117,9 @@ module.exports = {
         let componentConfig = getComponentConfig({ moduleName });
         await logging.register({ packageJson: componentConfig });
         const newComponent = utils.getJSONObject(utils.getJSONString(componentConfig));
-        newComponent.subscribe = async ({ name, overwriteDelegate = true }, callback) => {
+        newComponent.subscribe = async ({ name }, callback) => {
             componentConfig = getComponentConfig({ moduleName });
-            return await delegate.register({ context: componentConfig.name, name, overwriteDelegate }, callback);
+            return await delegate.register({ context: componentConfig.name, name, overwriteDelegate: true }, callback);
         };
         newComponent.publish = async ( { name, wildcard }, params) => {
             componentConfig = getComponentConfig({ moduleName });
@@ -139,6 +139,9 @@ module.exports = {
         registeredComponets.push(newComponent);
         return results;
     },
+    subscribe: async ({ name }, callback) => {
+        return await delegate.register({ context: "global", name, overwriteDelegate: true }, callback);
+    },
     load: ({ moduleName }) => {
         return new Promise(async (resolve) => {
             if (!moduleName){
@@ -148,6 +151,7 @@ module.exports = {
             let componentConfig = getComponentConfig({ moduleName });
             if (!componentConfig.resolvedPath || !componentConfig.packagePath){
                 await installModule({ moduleName });
+                await delegate.call({ context: "global", name: moduleName, wildcard }, { event: "installed" });
                 componentConfig = getComponentConfig({ moduleName });
             }
             references[componentConfig.friendlyName] =  require(componentConfig.resolvedPath);
