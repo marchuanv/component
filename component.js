@@ -2,13 +2,14 @@ const path = require("path");
 const fs = require('fs');
 const { exec } = require("child_process");
 const delegate = require("component.delegate");
-const logging = require("component.logging");
 const { component } = require("./package.json");
+const logging = require("component.logging");
 
-function Component( { moduleName, username, startPath }){
+function Component( { moduleName, username }){
     this.name = moduleName;
     this.username = username;
-    this.startPath = startPath;
+    this.startPath = null;
+    this.installing = false;
 };
 
 Component.prototype.subscribe = async function({ name }, callback) {
@@ -16,7 +17,7 @@ Component.prototype.subscribe = async function({ name }, callback) {
 };
 
 Component.prototype.publish =  async function({ name, wildcard }, params) {
-    const config = getComponentConfig({ moduleName: this,name });
+    const config = getComponentConfig({ moduleName: this.name });
     const results = [];
     for(const context of config.parent){
         const result = await delegate.call({ context, name, wildcard }, params);
@@ -30,19 +31,22 @@ Component.prototype.log = async function(message, data = null) {
 };
 
 Component.prototype.install = function() {
-    return new Promise(async (resolve) => {
+    return new Promise(async(resolve) => {
         let moduleToInstall = `${this.username}/${this.name}`;
-        await logging.write(this.name, `installing ${moduleToInstall}`);
-        exec(`npm install ${moduleToInstall} --no-save --no-package-lock`, () => {
-            const id = setInterval(async () => {
-                const info = resolveModule(moduleName);
-                if (info) {
-                    await logging.write(this.name, `${moduleToInstall} installed.`);
-                    clearInterval(id);
-                    resolve(info);
-                }
-            },100);
-        });
+        let config = getComponentConfig({ moduleName: this.name });
+        if (config.resolvedPath){
+            this.installing = false;
+            await this.log(`${moduleToInstall} installed.`);
+            this.startPath = config.resolvedPath;
+            await resolve();
+        } else if (!this.installing) {
+            await this.log(`installing ${moduleToInstall}`);
+            exec(`npm install ${moduleToInstall} --no-save --no-package-lock`, () => {});
+            this.installing = true;
+            setTimeout( async () => {
+                await this.install();
+            }, 1000);
+        }
     });
 };
 
@@ -148,7 +152,7 @@ module.exports = {
     on: async ({ eventName, moduleName }, callback) => {
         return await delegate.register({ context: moduleName, name: eventName, overwriteDelegate: true }, callback);
     },
-    load: ({ moduleName }) => {
+    load: async ({ moduleName }) => {
         const registeredComponent = componentRegister.find( c => c.name === moduleName);
         if (!registeredComponent) {
             throw new Error(`component: "${moduleName}" is not registered.`);
