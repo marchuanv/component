@@ -4,10 +4,11 @@ const { exec } = require("child_process");
 const delegate = require("component.delegate");
 const logging = require("component.logging");
 const { component } = require("./package.json");
-const { gitUsername } = component;
 
-function Component(moduleName){
+function Component( { moduleName, username, startPath }){
     this.name = moduleName;
+    this.username = username;
+    this.startPath = startPath;
 };
 
 Component.prototype.subscribe = async function({ name }, callback) {
@@ -26,6 +27,23 @@ Component.prototype.publish =  async function({ name, wildcard }, params) {
 
 Component.prototype.log = async function(message, data = null) {
     return logging.write(this.name, message, data);
+};
+
+Component.prototype.install = function() {
+    return new Promise(async (resolve) => {
+        let moduleToInstall = `${this.username}/${this.name}`;
+        await logging.write(this.name, `installing ${moduleToInstall}`);
+        exec(`npm install ${moduleToInstall} --no-save --no-package-lock`, () => {
+            const id = setInterval(async () => {
+                const info = resolveModule(moduleName);
+                if (info) {
+                    await logging.write(this.name, `${moduleToInstall} installed.`);
+                    clearInterval(id);
+                    resolve(info);
+                }
+            },100);
+        });
+    });
 };
 
 const capitalize = (s) => {
@@ -83,24 +101,6 @@ const resolveModule = (moduleName) => {
     }
 };
 
-const installModule = ({ moduleName }) => {
-    return new Promise(async (resolve, reject) => {
-        let moduleToInstall = moduleName;
-        if (gitUsername) {
-            moduleToInstall = `${gitUsername}/${moduleName}`;
-        }
-        exec(`npm install ${moduleToInstall} --no-save --no-package-lock`, () => {
-            const id = setInterval(() => {
-                const info = resolveModule(moduleName);
-                if (info) {
-                    clearInterval(id);
-                    resolve(info);
-                }
-            },100);
-        });
-    });
-};
-
 const getPackage = ({ dirPath, packagePath }) => {
     if (!packagePath && dirPath){
         packagePath = path.join(dirPath, "package.json");
@@ -128,49 +128,33 @@ const getComponentConfig = ({ moduleName }) => {
 };
 
 let componentRegister = [];
-const references = {
-    config: {}
-};
-
 module.exports = {
     register: async ({ moduleName }) => {
         const config = getComponentConfig({ moduleName });
-        const foundComponent = componentRegister.find( c => c.name === config.name);
-        if (foundComponent){
-            return foundComponent;
+        const registeredComponent = componentRegister.find( c => c.name === config.name);
+        if (registeredComponent){
+            return registeredComponent;
         }
-        const newComponent = new Component(config.name);
+        const { gitUsername } = component;
+        const newComponent = new Component({ moduleName: config.name || moduleName, username: gitUsername });
+        await newComponent.install();
+        await delegate.call({ context: moduleName, name: "installed" }, {});
         componentRegister.push(newComponent);
         await logging.register({ packageJson: config });
         const results = {};
         results[formatComponentName(componentConfig.name)] = newComponent;
         return results;
     },
-    onInstall: async ({ name }, callback) => {
-        return await delegate.register({ context: "global", name, overwriteDelegate: true }, callback);
+    on: async ({ eventName, moduleName }, callback) => {
+        return await delegate.register({ context: moduleName, name: eventName, overwriteDelegate: true }, callback);
     },
     load: ({ moduleName }) => {
-        return new Promise(async (resolve) => {
-            if (!moduleName){
-                throw new Error("missing parameter: moduleName");
-            }
-            loadingComponets.push(moduleName);
-            let componentConfig = getComponentConfig({ moduleName });
-            if (!componentConfig.resolvedPath || !componentConfig.packagePath){
-                await installModule({ moduleName });
-                await delegate.call({ context: "global", name: moduleName, wildcard }, { event: "installed" });
-                componentConfig = getComponentConfig({ moduleName });
-            }
-            references[componentConfig.friendlyName] =  require(componentConfig.resolvedPath);
-            references.config[componentConfig.friendlyName] = componentConfig;
-            const id = setInterval(async ()=> {
-                const latestLoadingModule = loadingComponets[loadingComponets.length-1];
-                if (latestLoadingModule === moduleName) {
-                    clearInterval(id);
-                    loadingComponets.pop();
-                    await resolve(references);
-                }
-            },100);
-        });
+        const registeredComponent = componentRegister.find( c => c.name === moduleName);
+        if (!registeredComponent) {
+            throw new Error(`component: "${moduleName}" is not registered.`);
+        }
+        const required = require(registeredComponent.startPath);
+        await delegate.call({ context: registeredComponent.name, name: "loaded" }, {});
+        return required;
     }
 };
