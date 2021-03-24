@@ -92,7 +92,7 @@ const resolveModule = (componentModule) => {
     const moduleName = typeof componentModule === "string" ? componentModule: path.basename(componentModule.path);
     let { resolvedPath, packagePath } = {};
     try {
-        resolvedPath = require.resolve(componentModule);
+        resolvedPath = require.resolve(moduleName);
         const fileName = path.basename(resolvedPath);
         packagePath = resolvedPath.replace(fileName, "package.json");
         return { resolvedPath, packagePath };
