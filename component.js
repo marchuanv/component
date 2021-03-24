@@ -77,25 +77,24 @@ const resolvePackage = ({ mainFilePath }) => {
 };
 
 const resolveModule = (componentModule) => {
-    const moduleName = typeof componentModule === "string" ? componentModule: path.basename(componentModule.path);
     let { resolvedPath, packagePath } = {};
     try {
-        resolvedPath = require.resolve(moduleName);
+        resolvedPath = require.resolve(componentModule);
         const fileName = path.basename(resolvedPath);
         packagePath = resolvedPath.replace(fileName, "package.json");
         return { resolvedPath, packagePath };
     } catch(err) {
-        let resolvedDir = path.join(__dirname,"node_modules", moduleName);
+        let resolvedDir = path.join(__dirname,"node_modules", componentModule);
         if (__dirname.indexOf("node_modules") > -1){
             resolvedDir = path.join(__dirname,"../");
-            resolvedDir = path.join(resolvedDir, moduleName);
+            resolvedDir = path.join(resolvedDir, componentModule);
         }
         packagePath = path.join(resolvedDir, "package.json");
         let package = resolvePackage({ mainFilePath: packagePath });
         resolvedPath = package? path.join(resolvedDir, package.main) : null;
         packagePath = package? packagePath : null;
 
-        if (!resolvedPath &&  !packagePath){
+        if (!resolvedPath && !packagePath){
             let resolvedDir = path.join(__dirname,"../../");
             packagePath = path.join(resolvedDir, "package.json");
             let package = resolvePackage({ mainFilePath: packagePath });
@@ -141,14 +140,16 @@ module.exports = {
         if (!moduleName){
             throw new Error("invalid parameter: componentModule");
         }
-        const config = getComponentConfig(componentModule);
+        const config = getComponentConfig(moduleName);
         let registeredComponent = componentRegister.find( c => c.name === config.name);
         if (!registeredComponent){
             const { gitUsername } = component;
-            registeredComponent = new Component({ moduleName: config.name, username: gitUsername });
             if (requireInstall) { //just setup component intent was not to install
+                registeredComponent = new Component({ moduleName, username: gitUsername });
                 await registeredComponent.install();
                 await delegate.call({ context: registeredComponent.name, name: "installed" }, {});
+            } else {
+                registeredComponent = new Component({ moduleName: config.name, username: gitUsername });
             }
             componentRegister.push(registeredComponent);
             await logging.register({ moduleName: registeredComponent.name });
