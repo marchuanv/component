@@ -133,16 +133,17 @@ const getComponentConfig = ({ moduleName }) => {
 
 let componentRegister = [];
 module.exports = {
-    register: async (moduleName = "") => {
-        if (typeof moduleName !== "string"){
+    register: async (componentModule = "") => {
+        let requireInstall = typeof componentModule !== module ;
+        if (typeof componentModule !== "string" && typeof componentModule !== module ){
             throw new Error("invalid parameter value for moduleName");
         }
-        const config = getComponentConfig({ moduleName });
+        const config = getComponentConfig({ moduleName: componentModule.name });
         let registeredComponent = componentRegister.find( c => c.name === config.name);
         if (!registeredComponent){
             const { gitUsername } = component;
-            registeredComponent = new Component({ moduleName: config.name || moduleName, username: gitUsername });
-            if (moduleName) { //just setup component intent was not to install
+            registeredComponent = new Component({ moduleName: config.name, username: gitUsername });
+            if (requireInstall) { //just setup component intent was not to install
                 await registeredComponent.install();
                 await delegate.call({ context: registeredComponent.name, name: "installed" }, {});
             }
