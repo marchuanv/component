@@ -156,7 +156,7 @@ module.exports = {
         const config = await getComponentConfig(componentModule);
         let registeredComponent = componentRegister.find( c => c.name === (config && config.name));
         if (!registeredComponent){
-            const { gitUsername } = componsent;
+            const { gitUsername } = component;
             registeredComponent = new Component({ moduleName: config.name, username: gitUsername });
             if (!(await registeredComponent.isInstalled())) {
                 await registeredComponent.install();
