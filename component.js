@@ -18,8 +18,8 @@ Component.prototype.subscribe = async function({ name }, callback) {
 
 Component.prototype.publish =  async function({ name, wildcard }, params) {
     const results = [];
-    for(const context of this.parent){
-        const result = await delegate.call({ context, name, wildcard }, params);
+    for(const { moduleName } of this.subscribers){
+        const result = await delegate.call({ context: moduleName, name, wildcard }, params);
         results.push(result);
     };
     return results.length === 1? results[0] : results;
