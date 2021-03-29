@@ -4,7 +4,6 @@ const { exec } = require("child_process");
 const delegate = require("component.delegate");
 const { component } = require("./package.json");
 const logging = require("component.logging");
-const { type } = require("os");
 
 function Component( { moduleName, username }){
     this.name = moduleName;
@@ -12,14 +11,16 @@ function Component( { moduleName, username }){
     this.installing = false;
 };
 
-Component.prototype.subscribe = async function({ name }, callback) {
-    return await delegate.register({ context: this.name, name, overwriteDelegate: true }, callback);
+Component.prototype.subscribe = async function({ channel }, callback) {
+    for(const { moduleName } of this.publishers){
+        await delegate.register({ context: moduleName, name: channel, overwriteDelegate: true }, callback);
+    };
 };
 
-Component.prototype.publish =  async function({ name, wildcard }, params) {
+Component.prototype.publish =  async function({ channel }, params) {
     const results = [];
     for(const { moduleName } of this.subscribers){
-        const result = await delegate.call({ context: moduleName, name, wildcard }, params);
+        const result = await delegate.call({ context: moduleName, name: channel }, params);
         results.push(result);
     };
     return results.length === 1? results[0] : results;
