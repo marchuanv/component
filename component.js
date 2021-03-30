@@ -170,11 +170,11 @@ module.exports = {
         const config = await getComponentConfig(componentModule);
         let registeredComponent = componentRegister.find( c => c.name === (config && config.name));
         if (!registeredComponent) {
-            for(const { moduleName } of config.component.publishers) {
+            registeredComponent = await registerComponent(config.name);
+            for(const { moduleName } of registeredComponent.publishers) {
                 await registerComponent(moduleName);
             };
-            registeredComponent = await registerComponent(config.name);
-            for(const { moduleName } of config.component.subscribers) {
+            for(const { moduleName } of registeredComponent.subscribers) {
                 await registerComponent(moduleName);
             };
         }
