@@ -136,9 +136,6 @@ const getComponentConfig = async (componentModule) => {
         resolvedPath: null,
         name: null,
         friendlyName: null,
-        subscribers: [],
-        publishers: [],
-        channel: null
     };
     ({ packagePath: config.packagePath, resolvedPath: config.resolvedPath , name: config.name } = resolveModule(componentModule));
     if (!config.packagePath || !config.resolvedPath){
@@ -157,11 +154,11 @@ const registerComponent = async (moduleName) => {
     const com = new Component({ moduleName, username: gitUsername });
     if (!(await com.isInstalled())) {
         await com.install();
-        await logging.register({ moduleName });
         await delegate.call({ context: moduleName, name: "installed" }, {});
     }
     await com.reload();
     if (!findRegisteredComponent(moduleName)) {
+        await logging.register({ moduleName });
         componentRegister.push(com);
     }
     return com;
