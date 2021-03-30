@@ -148,27 +148,40 @@ const getComponentConfig = async (componentModule) => {
     return config;
 };
 
-let componentRegister = [];
+const componentRegister = [];
+const registerComponent = async (moduleName) => {
+    const { gitUsername } = component;
+    const com = new Component({ moduleName, username: gitUsername });
+    if (!(await com.isInstalled())) {
+        await com.install();
+        componentRegister.push(com);
+        await com.reload();
+        await logging.register({ moduleName });
+        await delegate.call({ context: moduleName, name: "installed" }, {});
+    }
+    return com;
+};
+
 module.exports = {
     register: async (componentModule = "") => {
         if (!componentModule){
             throw new Error("invalid parameter: componentModule");
         }
         const config = await getComponentConfig(componentModule);
-        let registeredComponent = componentRegister.find( c => c.name === (config && config.name));
-        if (!registeredComponent){
-            const { gitUsername } = component;
-            registeredComponent = new Component({ moduleName: config.name, username: gitUsername });
-            if (!(await registeredComponent.isInstalled())) {
-                await registeredComponent.install();
-                await delegate.call({ context: registeredComponent.name, name: "installed" }, {});
-            }
-            componentRegister.push(registeredComponent);
-            await logging.register({ moduleName: registeredComponent.name });
-            await registeredComponent.reload();
+        let registeredComponent = componentRegister.filter( c => c.name === (config && config.name));
+        if (!registeredComponent) {
+            for(const { moduleName } of config.component.publishers) {
+                await registerComponent(moduleName);
+            };
+            await registerComponent(config.name);
+            for(const { moduleName } of config.component.subscribers) {
+                await registerComponent(moduleName);
+            };
         }
         const results = {};
-        results[formatComponentName(registeredComponent.name)] = registeredComponent;
+        for(const registeredComponent of registeredComponents){
+            results[formatComponentName(registeredComponent.name)] = registeredComponent;
+        };
         return results;
     },
     on: async ({ eventName, moduleName }, callback) => {
