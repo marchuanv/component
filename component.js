@@ -18,12 +18,7 @@ Component.prototype.subscribe = async function({ channel }, callback) {
 };
 
 Component.prototype.publish =  async function({ channel }, params) {
-    const results = [];
-    for(const { moduleName } of this.subscribers){
-        const result = await delegate.call({ context: moduleName, name: channel }, params);
-        results.push(result);
-    };
-    return results.length === 1? results[0] : results;
+    return await delegate.call({ context: this.name, name: channel }, params);
 };
 
 Component.prototype.log = async function(message, data = null) {
@@ -175,8 +170,7 @@ module.exports = {
         }
         const config = await getComponentConfig(componentModule);
         let registeredComponent = await ensureInstalledComponent(config.name);
-        const relationalComponents = registeredComponent.publishers.concat(registeredComponent.subscribers);
-        for(const { moduleName } of relationalComponents) {
+        for(const { moduleName } of registeredComponent.publishers) {
             await ensureInstalledComponent(moduleName);
         };
         const results = {};
