@@ -173,15 +173,13 @@ module.exports = {
             for(const { moduleName } of config.component.publishers) {
                 await registerComponent(moduleName);
             };
-            await registerComponent(config.name);
+            registeredComponent = await registerComponent(config.name);
             for(const { moduleName } of config.component.subscribers) {
                 await registerComponent(moduleName);
             };
         }
         const results = {};
-        for(const registeredComponent of registeredComponents){
-            results[formatComponentName(registeredComponent.name)] = registeredComponent;
-        };
+        results[formatComponentName(registeredComponent.name)] = registeredComponent;
         return results;
     },
     on: async ({ eventName, moduleName }, callback) => {
