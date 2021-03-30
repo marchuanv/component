@@ -168,7 +168,7 @@ module.exports = {
             throw new Error("invalid parameter: componentModule");
         }
         const config = await getComponentConfig(componentModule);
-        let registeredComponent = componentRegister.filter( c => c.name === (config && config.name));
+        let registeredComponent = componentRegister.find( c => c.name === (config && config.name));
         if (!registeredComponent) {
             for(const { moduleName } of config.component.publishers) {
                 await registerComponent(moduleName);
