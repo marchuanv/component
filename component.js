@@ -149,7 +149,7 @@ const getComponentConfig = async (componentModule) => {
 };
 
 const componentRegister = [];
-const registerComponent = async (moduleName) => {
+const ensureInstalledComponent = async (moduleName) => {
     const { gitUsername } = component;
     const com = new Component({ moduleName, username: gitUsername });
     if (!(await com.isInstalled())) {
@@ -174,16 +174,11 @@ module.exports = {
             throw new Error("invalid parameter: componentModule");
         }
         const config = await getComponentConfig(componentModule);
-        let registeredComponent = findRegisteredComponent(config && config.name);
-        if (!registeredComponent) {
-            registeredComponent = await registerComponent(config.name);
-            const relationalComponents = registeredComponent.publishers.concat(registeredComponent.subscribers);
-            for(const { moduleName } of relationalComponents) {
-                if (!findRegisteredComponent(moduleName)){
-                    await registerComponent(moduleName);
-                }
-            };
-        }
+        let registeredComponent = await ensureInstalledComponent(config.name);
+        const relationalComponents = registeredComponent.publishers.concat(registeredComponent.subscribers);
+        for(const { moduleName } of relationalComponents) {
+            await ensureInstalledComponent(moduleName);
+        };
         const results = {};
         results[formatComponentName(registeredComponent.name)] = registeredComponent;
         return results;
