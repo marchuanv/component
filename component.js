@@ -21,6 +21,7 @@ module.exports = {
             throw new Error("invalid parameter: componentModule");
         }
         const componentConfig = new ComponentConfig(componentModule);
+        componentConfig.load();
         let registeredComponent = module.exports.registry.find(com => com.name === componentConfig.name);
         if (!registeredComponent) {
             registeredComponent = await ensureInstalledComponent(componentConfig);

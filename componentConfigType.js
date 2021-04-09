@@ -80,7 +80,7 @@ function ComponentConfig(componentModule) {
     this.friendlyName = null;
 };
 
-ComponentConfig.prototype.load = async function({ channel }, callback) {
+ComponentConfig.prototype.load = async function() {
     ({ packagePath: this.packagePath, resolvedPath: this.resolvedPath , name: this.name } = resolveModule(this.componentModule));
     if (!this.packagePath || !this.resolvedPath){
         return;
