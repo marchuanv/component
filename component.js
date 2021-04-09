@@ -100,7 +100,7 @@ const ensureInstalledComponent = async (componentConfig) => {
         await delegate.call({ context: "global", name: "moduleinstalled" }, {});
     }
     await com.reload();
-    await logging.register({ moduleName });
+    await logging.register({ moduleName: componentConfig.name });
     return com;
 };
 
