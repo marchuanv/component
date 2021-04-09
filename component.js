@@ -189,7 +189,7 @@ module.exports = {
     load: (moduleName) => {
         setTimeout(async () => {
             if (registering) {
-                return module.exports.load();
+                return module.exports.load(moduleName);
             }
             const registeredComponent = componentRegister.find( c => c.name === moduleName);
             if (!registeredComponent) {
