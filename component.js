@@ -175,7 +175,7 @@ module.exports = {
         };
         const results = {};
         results[formatComponentName(registeredComponent.name)] = registeredComponent;
-        await delegate.call({ context: this.name, name: "registered" }, results);
+        await delegate.call({ context: registeredComponent.name, name: "registered" }, results);
     },
     on: async ({ eventName, moduleName }, callback) => {
         return await delegate.register({ context: moduleName, name: eventName, overwriteDelegate: true }, callback);
