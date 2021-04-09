@@ -163,8 +163,10 @@ const findRegisteredComponent = (moduleName) => {
     return componentRegister.find( c => c.name === moduleName);
 }
 
+let registering = false;
 module.exports = {
-    register: async (componentModule = "") => {
+    register: (componentModule = "") => {
+        registering = true;
         if (!componentModule){
             throw new Error("invalid parameter: componentModule");
         }
@@ -176,18 +178,24 @@ module.exports = {
         const results = {};
         results[formatComponentName(registeredComponent.name)] = registeredComponent;
         await delegate.call({ context: "global", name: "moduleregistered" }, results);
+        registering = false;
     },
     on: async ({ eventName }, callback) => {
         return await delegate.register({ context: "global", name: eventName, overwriteDelegate: true }, callback);
     },
-    load: async (moduleName) => {
-        const registeredComponent = componentRegister.find( c => c.name === moduleName);
-        if (!registeredComponent) {
-            throw new Error(`component: "${moduleName}" is not registered.`);
-        }
-        const required = require(registeredComponent.resolvedPath);
-        const results = {};
-        results[formatComponentName(registeredComponent.name)] = required;
-        await delegate.call({ context: "global", name: "moduleloaded" }, results);
+    load: (moduleName) => {
+        setTimeout(async () => {
+            if (registering) {
+                return module.exports.load(moduleName);
+            }
+            const registeredComponent = componentRegister.find( c => c.name === moduleName);
+            if (!registeredComponent) {
+                throw new Error(`component: "${moduleName}" is not registered.`);
+            }
+            const required = require(registeredComponent.resolvedPath);
+            const results = {};
+            results[formatComponentName(registeredComponent.name)] = required;
+            await delegate.call({ context: "global", name: "moduleloaded" }, results);
+        },1000);
     }
 };
