@@ -72,7 +72,7 @@ const formatComponentName = (name) => {
 };
 
 
-function ComponentConfig({ componentModule }) {
+function ComponentConfig(componentModule) {
     this.componentModule = componentModule;
     this.packagePath = null;
     this.resolvedPath = null;
