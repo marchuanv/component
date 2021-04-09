@@ -1,17 +1,6 @@
 const { component } = require("./package.json");
-const logging = require("component.logging");
 const { Component } = require("./lib/component.js");
 const { ComponentConfig } = require("./lib/config.js");
-
-const ensureInstalledComponent = async (componentConfig) => {
-    const { gitUsername } = component;
-    const com = new Component({ username: gitUsername, componentConfig, logging });
-    if (!(await com.isInstalled())) {
-        await com.install();
-    }
-    await logging.register({ moduleName: componentConfig.name });
-    return com;
-};
 
 module.exports = {
     registry: [],
@@ -23,7 +12,11 @@ module.exports = {
         componentConfig.load();
         let registeredComponent = module.exports.registry.find(com => com.name === componentConfig.name);
         if (!registeredComponent) {
-            registeredComponent = await ensureInstalledComponent(componentConfig);
+            const { gitUsername } = component;
+            registeredComponent = new Component({ username: gitUsername, componentConfig });
+            if (!(await registeredComponent.isInstalled())) {
+                await registeredComponent.install();
+            }
             module.exports.registry.push(registeredComponent);
         }
         for(const { moduleName } of registeredComponent.config.publishers) {
