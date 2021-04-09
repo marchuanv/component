@@ -23,7 +23,9 @@ module.exports = {
             await module.exports.register(moduleName);
         };
         registeredComponent.exports = require(registeredComponent.config.resolvedPath);
-        const results = {};
+        const results = {
+            name: registeredComponent.config.friendlyName
+        };
         results[registeredComponent.config.friendlyName] = registeredComponent;
         return results;
     }
