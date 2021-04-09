@@ -156,23 +156,20 @@ const ensureInstalledComponent = async (moduleName) => {
     return com;
 };
 
-const awaitingModules = [];
 module.exports = {
-    register: (componentModule = "") => {
-        setTimeout(async () => {
-            if (!componentModule){
-                throw new Error("invalid parameter: componentModule");
-            }
-            const config = await getComponentConfig(componentModule);
-            let registeredComponent = await ensureInstalledComponent(config.name);
-            for(const { moduleName } of registeredComponent.publishers) {
-                await ensureInstalledComponent(moduleName);
-            };
-            const results = {};
-            results[formatComponentName(registeredComponent.name)] = registeredComponent;
-            registeredComponent.exports = require(registeredComponent.resolvedPath);
-            await delegate.call({ context: "global", name: "moduleregistered" }, results);
-        },1);
+    load: async (componentModule = "") => {
+        if (!componentModule){
+            throw new Error("invalid parameter: componentModule");
+        }
+        const config = await getComponentConfig(componentModule);
+        let registeredComponent = await ensureInstalledComponent(config.name);
+        for(const { moduleName } of registeredComponent.publishers) {
+            await module.exports.register(moduleName);
+        };
+        registeredComponent.exports = require(registeredComponent.resolvedPath);
+        const results = {};
+        results[formatComponentName(registeredComponent.name)] = registeredComponent;
+        return results;
     },
     on: async ({ eventName }, callback) => {
         return await delegate.register({ context: "global", name: eventName, overwriteDelegate: true }, callback);
