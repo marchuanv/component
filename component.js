@@ -31,7 +31,7 @@ module.exports = {
         };
         registeredComponent.exports = require(registeredComponent.config.resolvedPath);
         const results = {};
-        results[formatComponentName(registeredComponent.name)] = registeredComponent;
+        results[registeredComponent.config.friendlyName] = registeredComponent;
         return results;
     }
 };
