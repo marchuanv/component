@@ -165,11 +165,9 @@ const findRegisteredComponent = (moduleName) => {
 
 let timeout = 1;
 let retry = 0;
-let registering = false;
 module.exports = {
     register: (componentModule = "") => {
         setTimeout(async () => {
-            registering = true;
             if (!componentModule){
                 throw new Error("invalid parameter: componentModule");
             }
@@ -180,7 +178,6 @@ module.exports = {
             };
             const results = {};
             results[formatComponentName(registeredComponent.name)] = registeredComponent;
-            registering = false;
             await delegate.call({ context: "global", name: "moduleregistered" }, results);
         },1);
     },
@@ -196,6 +193,7 @@ module.exports = {
                 return module.exports.load(moduleName);
             } else if (retry >= 3) {
                 retry = 0;
+                timeout = 1;
                 throw new Error(`component: "${moduleName}" is not registered.`);
             }
             const required = require(registeredComponent.resolvedPath);
