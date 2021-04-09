@@ -187,15 +187,15 @@ module.exports = {
     load: (moduleName) => {
         setTimeout(async () => {
             const registeredComponent = componentRegister.find( c => c.name === moduleName);
-            if (!registeredComponent && retry < 3 ) {
-                timeout = 1000;
-                retry = retry + 1;
-                return module.exports.load(moduleName);
-            } else if (retry >= 10) {
+            if (retry >= 10) {
                 retry = 0;
                 timeout = 1;
                 throw new Error(`component: "${moduleName}" is not registered.`);
-            }
+            } else if (!registeredComponent) {
+                timeout = 1000;
+                retry = retry + 1;
+                return module.exports.load(moduleName);
+            } 
             const required = require(registeredComponent.resolvedPath);
             const results = {};
             results[formatComponentName(registeredComponent.name)] = required;
