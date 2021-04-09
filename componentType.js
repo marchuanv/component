@@ -25,6 +25,7 @@ Component.prototype.log = async function(message, data = null) {
 };
 
 Component.prototype.isInstalled = async function() {
+    this.componentConfig.load();
     if (this.componentConfig.resolvedPath && this.componentConfig.packagePath) {
         this.installing = false;
         return true;
@@ -42,7 +43,6 @@ Component.prototype.install = function() {
         let moduleToInstall = `${this.username}/${this.name}`;
         if (await this.isInstalled()){
             await this.log(`${moduleToInstall} installed.`);
-            this.componentConfig.load();
             return await resolve();
         } else if (!this.installing) {
             await this.log(`installing ${moduleToInstall}`);
