@@ -19,7 +19,7 @@ module.exports = {
             }
             module.exports.registry.push(registeredComponent);
         }
-        for(const { moduleName } of registeredComponent.config.publishers) {
+        for(const { moduleName } of registeredComponent.config.dependencies) {
             await module.exports.load(moduleName);
         };
         registeredComponent.exports = require(registeredComponent.config.resolvedPath);
