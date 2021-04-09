@@ -1,11 +1,12 @@
 const { exec } = require("child_process");
+const delegate = require("component.delegate");
 
 function Component( { username, componentConfig, logging }){
     this.name = componentConfig.name;
     this.username = username;
     this.installing = false;
     this.exports = {};
-    this.config = componentConfig;
+    this.componentConfig = componentConfig;
     this.logging = logging;
 };
 
@@ -24,7 +25,7 @@ Component.prototype.log = async function(message, data = null) {
 };
 
 Component.prototype.isInstalled = async function() {
-    if (this.config.resolvedPath && this.config.packagePath) {
+    if (this.componentConfig.resolvedPath && this.componentConfig.packagePath) {
         this.installing = false;
         return true;
     }
@@ -32,7 +33,8 @@ Component.prototype.isInstalled = async function() {
 };
 
 Component.prototype.reload = async function() {
-    Object.assign(this, this.config);
+    this.componentConfig.load();
+    Object.assign(this, this.componentConfig);
 };
 
 Component.prototype.install = function() {
@@ -45,6 +47,7 @@ Component.prototype.install = function() {
             await this.log(`installing ${moduleToInstall}`);
             exec(`npm install ${moduleToInstall} --no-save --no-package-lock`, () => {});
             this.installing = true;
+            this.componentConfig.load();
         }
         setTimeout( async () => {
             resolve(await this.install());
@@ -52,6 +55,4 @@ Component.prototype.install = function() {
     });
 };
 
-module.exports = {
-    Component
-};
+module.exports = { Component };
