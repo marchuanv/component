@@ -163,22 +163,25 @@ const findRegisteredComponent = (moduleName) => {
     return componentRegister.find( c => c.name === moduleName);
 }
 
+let timeout = 100;
 let registering = false;
 module.exports = {
     register: (componentModule = "") => {
-        registering = true;
-        if (!componentModule){
-            throw new Error("invalid parameter: componentModule");
-        }
-        const config = await getComponentConfig(componentModule);
-        let registeredComponent = await ensureInstalledComponent(config.name);
-        for(const { moduleName } of registeredComponent.publishers) {
-            await ensureInstalledComponent(moduleName);
-        };
-        const results = {};
-        results[formatComponentName(registeredComponent.name)] = registeredComponent;
-        await delegate.call({ context: "global", name: "moduleregistered" }, results);
-        registering = false;
+        setTimeout(async () => {
+            registering = true;
+            if (!componentModule){
+                throw new Error("invalid parameter: componentModule");
+            }
+            const config = await getComponentConfig(componentModule);
+            let registeredComponent = await ensureInstalledComponent(config.name);
+            for(const { moduleName } of registeredComponent.publishers) {
+                await ensureInstalledComponent(moduleName);
+            };
+            const results = {};
+            results[formatComponentName(registeredComponent.name)] = registeredComponent;
+            await delegate.call({ context: "global", name: "moduleregistered" }, results);
+            registering = false;
+        },timeout);
     },
     on: async ({ eventName }, callback) => {
         return await delegate.register({ context: "global", name: eventName, overwriteDelegate: true }, callback);
@@ -186,7 +189,7 @@ module.exports = {
     load: (moduleName) => {
         setTimeout(async () => {
             if (registering) {
-                return module.exports.load(moduleName);
+                return module.exports.load();
             }
             const registeredComponent = componentRegister.find( c => c.name === moduleName);
             if (!registeredComponent) {
@@ -196,6 +199,6 @@ module.exports = {
             const results = {};
             results[formatComponentName(registeredComponent.name)] = required;
             await delegate.call({ context: "global", name: "moduleloaded" }, results);
-        },1000);
+        },timeout);
     }
 };
