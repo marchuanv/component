@@ -9,6 +9,7 @@ function Component( { moduleName, username }){
     this.name = moduleName;
     this.username = username;
     this.installing = false;
+    this.exports = {};
 };
 
 Component.prototype.subscribe = async function({ channel }, callback) {
@@ -143,7 +144,6 @@ const getComponentConfig = async (componentModule) => {
     return config;
 };
 
-const componentRegister = [];
 const ensureInstalledComponent = async (moduleName) => {
     const { gitUsername } = component;
     const com = new Component({ moduleName, username: gitUsername });
@@ -154,7 +154,6 @@ const ensureInstalledComponent = async (moduleName) => {
     await com.reload();
     if (!findRegisteredComponent(moduleName)) {
         await logging.register({ moduleName });
-        componentRegister.push(com);
     }
     return com;
 };
@@ -177,37 +176,11 @@ module.exports = {
             };
             const results = {};
             results[formatComponentName(registeredComponent.name)] = registeredComponent;
+            registeredComponent.exports = require(registeredComponent.resolvedPath);
             await delegate.call({ context: "global", name: "moduleregistered" }, results);
         },1);
     },
     on: async ({ eventName }, callback) => {
         return await delegate.register({ context: "global", name: eventName, overwriteDelegate: true }, callback);
-    },
-    load: (moduleName) => {
-        let awaitingModule = awaitingModules.find(awaitMod => awaitMod.name === moduleName);
-        if (!awaitingModule) {
-            awaitingModule = { name: moduleName, done: false, timeout: 1, retry: 0 };
-            awaitingModules.push(awaitingModule);
-        }
-        setTimeout(async () => {
-            const registeredComponent = componentRegister.find( c => c.name === moduleName);
-            if (registeredComponent) {
-                awaitingModule.done = true;
-                const required = require(registeredComponent.resolvedPath);
-                const results = {};
-                results[formatComponentName(registeredComponent.name)] = required;
-                return await delegate.call({ context: "global", name: "moduleloaded" }, results);
-            }
-            awaitingModule.done = false;
-            if (awaitingModule.retry >= 10) {
-                awaitingModule.retry = 0;
-                awaitingModule.timeout = 1;
-                throw new Error(`component: "${awaitingModule.name}" is not registered.`);
-            } else {
-                awaitingModule.timeout = 1000;
-                awaitingModule.retry = awaitingModule.retry + 1;
-                return module.exports.load(awaitingModule.name);
-            } 
-        }, awaitingModule.timeout);
     }
 };
