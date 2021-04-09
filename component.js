@@ -9,7 +9,6 @@ const ensureInstalledComponent = async (componentConfig) => {
     if (!(await com.isInstalled())) {
         await com.install();
     }
-    await com.reload();
     await logging.register({ moduleName: componentConfig.name });
     return com;
 };
