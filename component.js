@@ -1,7 +1,7 @@
 const { component } = require("./package.json");
 const logging = require("component.logging");
-const { Component } = require("./componentType.js");
-const { ComponentConfig } = require("./componentConfigType.js");
+const { Component } = require("./lib/component.js");
+const { ComponentConfig } = require("./lib/config.js");
 
 const ensureInstalledComponent = async (componentConfig) => {
     const { gitUsername } = component;
