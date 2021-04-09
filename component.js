@@ -198,16 +198,16 @@ module.exports = {
                 results[formatComponentName(registeredComponent.name)] = required;
                 return await delegate.call({ context: "global", name: "moduleloaded" }, results);
             }
-            awaitingModules.done = false;
-            if (awaitingModules.retry >= 10) {
-                awaitingModules.retry = 0;
-                awaitingModules.timeout = 1;
-                throw new Error(`component: "${awaitingModules.name}" is not registered.`);
+            awaitingModule.done = false;
+            if (awaitingModule.retry >= 10) {
+                awaitingModule.retry = 0;
+                awaitingModule.timeout = 1;
+                throw new Error(`component: "${awaitingModule.name}" is not registered.`);
             } else {
-                awaitingModules.timeout = 1000;
-                awaitingModules.retry = awaitingModules.retry + 1;
-                return module.exports.load(awaitingModules.name);
+                awaitingModule.timeout = 1000;
+                awaitingModule.retry = awaitingModule.retry + 1;
+                return module.exports.load(awaitingModule.name);
             } 
-        }, awaitingModules.timeout);
+        }, awaitingModule.timeout);
     }
 };
