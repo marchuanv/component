@@ -1,10 +1,11 @@
 const { exec } = require("child_process");
 
-function Component( { moduleName, username }){
+function Component( { moduleName, username, config }){
     this.name = moduleName;
     this.username = username;
     this.installing = false;
     this.exports = {};
+    this.config = config;
 };
 
 Component.prototype.subscribe = async function({ channel }, callback) {
@@ -22,8 +23,7 @@ Component.prototype.log = async function(message, data = null) {
 };
 
 Component.prototype.isInstalled = async function() {
-    let config = await getComponentConfig(this.name);
-    if (config.resolvedPath && config.packagePath) {
+    if (this.config.resolvedPath && this.config.packagePath) {
         this.installing = false;
         return true;
     }
@@ -31,8 +31,7 @@ Component.prototype.isInstalled = async function() {
 };
 
 Component.prototype.reload = async function() {
-    let config = await getComponentConfig(this.name);
-    Object.assign(this, config);
+    Object.assign(this, this.config);
 };
 
 Component.prototype.install = function() {
@@ -51,6 +50,7 @@ Component.prototype.install = function() {
         }, 1000);
     });
 };
+
 module.exports = {
     Component
 };

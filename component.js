@@ -92,9 +92,9 @@ const getComponentConfig = async (componentModule) => {
     return config;
 };
 
-const ensureInstalledComponent = async (moduleName) => {
+const ensureInstalledComponent = async (config) => {
     const { gitUsername } = component;
-    const com = new Component({ moduleName, username: gitUsername });
+    const com = new Component({ moduleName, username: gitUsername, config });
     if (!(await com.isInstalled())) {
         await com.install();
         await delegate.call({ context: "global", name: "moduleinstalled" }, {});
@@ -110,10 +110,10 @@ module.exports = {
         if (!componentModule){
             throw new Error("invalid parameter: componentModule");
         }
-        const config = await getComponentConfig(componentModule);
-        let registeredComponent = module.exports.registry.find(com => com.name === config.name);
+        const componentConfig = await getComponentConfig(componentModule);
+        let registeredComponent = module.exports.registry.find(com => com.name === componentConfig.name);
         if (!registeredComponent) {
-            registeredComponent = await ensureInstalledComponent(config.name);
+            registeredComponent = await ensureInstalledComponent(componentConfig);
             module.exports.registry.push(registeredComponent);
         }
         for(const { moduleName } of registeredComponent.publishers) {
