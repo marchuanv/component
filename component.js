@@ -163,7 +163,7 @@ const findRegisteredComponent = (moduleName) => {
     return componentRegister.find( c => c.name === moduleName);
 }
 
-let timeout = 100;
+let timeout = 1;
 let registering = false;
 module.exports = {
     register: (componentModule = "") => {
@@ -181,7 +181,7 @@ module.exports = {
             results[formatComponentName(registeredComponent.name)] = registeredComponent;
             registering = false;
             await delegate.call({ context: "global", name: "moduleregistered" }, results);
-        },timeout);
+        },1);
     },
     on: async ({ eventName }, callback) => {
         return await delegate.register({ context: "global", name: eventName, overwriteDelegate: true }, callback);
@@ -189,6 +189,7 @@ module.exports = {
     load: (moduleName) => {
         setTimeout(async () => {
             if (registering) {
+                timeout = 1000;
                 return module.exports.load(moduleName);
             }
             const registeredComponent = componentRegister.find( c => c.name === moduleName);
