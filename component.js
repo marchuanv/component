@@ -26,10 +26,10 @@ module.exports = {
             registeredComponent = await ensureInstalledComponent(componentConfig);
             module.exports.registry.push(registeredComponent);
         }
-        for(const { moduleName } of registeredComponent.publishers) {
+        for(const { moduleName } of registeredComponent.config.publishers) {
             await module.exports.register(moduleName);
         };
-        registeredComponent.exports = require(registeredComponent.resolvedPath);
+        registeredComponent.exports = require(registeredComponent.config.resolvedPath);
         const results = {};
         results[formatComponentName(registeredComponent.name)] = registeredComponent;
         return results;
