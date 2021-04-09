@@ -179,8 +179,8 @@ module.exports = {
             };
             const results = {};
             results[formatComponentName(registeredComponent.name)] = registeredComponent;
-            await delegate.call({ context: "global", name: "moduleregistered" }, results);
             registering = false;
+            await delegate.call({ context: "global", name: "moduleregistered" }, results);
         },timeout);
     },
     on: async ({ eventName }, callback) => {
