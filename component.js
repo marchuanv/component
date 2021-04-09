@@ -94,7 +94,7 @@ const getComponentConfig = async (componentModule) => {
 
 const ensureInstalledComponent = async (componentConfig) => {
     const { gitUsername } = component;
-    const com = new Component({ username: gitUsername, componentConfig });
+    const com = new Component({ username: gitUsername, componentConfig, logging });
     if (!(await com.isInstalled())) {
         await com.install();
         await delegate.call({ context: "global", name: "moduleinstalled" }, {});

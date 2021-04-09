@@ -1,11 +1,12 @@
 const { exec } = require("child_process");
 
-function Component( { username, componentConfig }){
+function Component( { username, componentConfig, logging }){
     this.name = componentConfig.name;
     this.username = username;
     this.installing = false;
     this.exports = {};
     this.config = componentConfig;
+    this.logging = logging;
 };
 
 Component.prototype.subscribe = async function({ channel }, callback) {
@@ -19,7 +20,7 @@ Component.prototype.publish =  async function({ channel }, params) {
 };
 
 Component.prototype.log = async function(message, data = null) {
-    return logging.write(this.name, message, data);
+    return this.logging.write(this.name, message, data);
 };
 
 Component.prototype.isInstalled = async function() {
