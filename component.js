@@ -152,15 +152,9 @@ const ensureInstalledComponent = async (moduleName) => {
         await delegate.call({ context: "global", name: "moduleinstalled" }, {});
     }
     await com.reload();
-    if (!findRegisteredComponent(moduleName)) {
-        await logging.register({ moduleName });
-    }
+    await logging.register({ moduleName });
     return com;
 };
-
-const findRegisteredComponent = (moduleName) => {
-    return componentRegister.find( c => c.name === moduleName);
-}
 
 const awaitingModules = [];
 module.exports = {
