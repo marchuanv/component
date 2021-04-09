@@ -44,7 +44,6 @@ Component.prototype.install = function() {
         let moduleToInstall = `${this.username}/${this.name}`;
         if (await this.isInstalled()){
             await this.log(`${moduleToInstall} installed.`);
-            await delegate.call({ context: this.name, name: "installed" }, {});
             return await resolve();
         } else if (!this.installing) {
             await this.log(`installing ${moduleToInstall}`);
@@ -150,6 +149,7 @@ const ensureInstalledComponent = async (moduleName) => {
     const com = new Component({ moduleName, username: gitUsername });
     if (!(await com.isInstalled())) {
         await com.install();
+        await delegate.call({ context: "global", name: "moduleinstalled" }, {});
     }
     await com.reload();
     if (!findRegisteredComponent(moduleName)) {
@@ -175,10 +175,10 @@ module.exports = {
         };
         const results = {};
         results[formatComponentName(registeredComponent.name)] = registeredComponent;
-        await delegate.call({ context: registeredComponent.name, name: "registered" }, results);
+        await delegate.call({ context: "global", name: "moduleregistered" }, results);
     },
-    on: async ({ eventName, moduleName }, callback) => {
-        return await delegate.register({ context: moduleName, name: eventName, overwriteDelegate: true }, callback);
+    on: async ({ eventName }, callback) => {
+        return await delegate.register({ context: "global", name: eventName, overwriteDelegate: true }, callback);
     },
     load: async ({ moduleName }) => {
         const registeredComponent = componentRegister.find( c => c.name === moduleName);
@@ -186,6 +186,6 @@ module.exports = {
             throw new Error(`component: "${moduleName}" is not registered.`);
         }
         const required = require(registeredComponent.resolvedPath);
-        await delegate.call({ context: registeredComponent.name, name: "loaded" }, required);
+        await delegate.call({ context: "global", name: "moduleloaded" }, required);
     }
 };
