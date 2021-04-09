@@ -191,7 +191,7 @@ module.exports = {
                 timeout = 1000;
                 retry = retry + 1;
                 return module.exports.load(moduleName);
-            } else if (retry >= 3) {
+            } else if (retry >= 10) {
                 retry = 0;
                 timeout = 1;
                 throw new Error(`component: "${moduleName}" is not registered.`);
