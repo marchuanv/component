@@ -92,9 +92,9 @@ const getComponentConfig = async (componentModule) => {
     return config;
 };
 
-const ensureInstalledComponent = async (config) => {
+const ensureInstalledComponent = async (componentConfig) => {
     const { gitUsername } = component;
-    const com = new Component({ moduleName, username: gitUsername, config });
+    const com = new Component({ username: gitUsername, componentConfig });
     if (!(await com.isInstalled())) {
         await com.install();
         await delegate.call({ context: "global", name: "moduleinstalled" }, {});

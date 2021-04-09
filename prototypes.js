@@ -1,11 +1,11 @@
 const { exec } = require("child_process");
 
-function Component( { moduleName, username, config }){
-    this.name = moduleName;
+function Component( { username, componentConfig }){
+    this.name = componentConfig.name;
     this.username = username;
     this.installing = false;
     this.exports = {};
-    this.config = config;
+    this.config = componentConfig;
 };
 
 Component.prototype.subscribe = async function({ channel }, callback) {
