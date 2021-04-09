@@ -186,6 +186,8 @@ module.exports = {
             throw new Error(`component: "${moduleName}" is not registered.`);
         }
         const required = require(registeredComponent.resolvedPath);
-        await delegate.call({ context: "global", name: "moduleloaded" }, required);
+        const results = {};
+        results[formatComponentName(registeredComponent.name)] = required;
+        await delegate.call({ context: "global", name: "moduleloaded" }, results);
     }
 };
