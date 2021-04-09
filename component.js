@@ -1,8 +1,7 @@
-const delegate = require("component.delegate");
 const { component } = require("./package.json");
 const logging = require("component.logging");
-const { Component } = require("./prototypes.js");
-const config = require("./config.js");
+const { Component } = require("./componentType.js");
+const { ComponentConfig } = require("./componentConfigType.js");
 
 const ensureInstalledComponent = async (componentConfig) => {
     const { gitUsername } = component;
@@ -21,7 +20,7 @@ module.exports = {
         if (!componentModule){
             throw new Error("invalid parameter: componentModule");
         }
-        const componentConfig = await getComponentConfig(componentModule);
+        const componentConfig = new ComponentConfig(componentModule);
         let registeredComponent = module.exports.registry.find(com => com.name === componentConfig.name);
         if (!registeredComponent) {
             registeredComponent = await ensureInstalledComponent(componentConfig);
@@ -34,8 +33,5 @@ module.exports = {
         const results = {};
         results[formatComponentName(registeredComponent.name)] = registeredComponent;
         return results;
-    },
-    on: async ({ eventName }, callback) => {
-        return await delegate.register({ context: "global", name: eventName, overwriteDelegate: true }, callback);
     }
 };
