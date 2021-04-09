@@ -195,6 +195,7 @@ module.exports = {
                 retry = retry + 1;
                 return module.exports.load(moduleName);
             } else if (retry >= 3) {
+                retry = 0;
                 throw new Error(`component: "${moduleName}" is not registered.`);
             }
             const required = require(registeredComponent.resolvedPath);
