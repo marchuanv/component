@@ -164,6 +164,7 @@ const findRegisteredComponent = (moduleName) => {
 }
 
 let timeout = 1;
+let retry = 0;
 let registering = false;
 module.exports = {
     register: (componentModule = "") => {
@@ -188,12 +189,12 @@ module.exports = {
     },
     load: (moduleName) => {
         setTimeout(async () => {
-            if (registering) {
-                timeout = 1000;
-                return module.exports.load(moduleName);
-            }
             const registeredComponent = componentRegister.find( c => c.name === moduleName);
-            if (!registeredComponent) {
+            if (!registeredComponent && retry < 3 ) {
+                timeout = 1000;
+                retry = retry + 1;
+                return module.exports.load(moduleName);
+            } else if (retry >= 3) {
                 throw new Error(`component: "${moduleName}" is not registered.`);
             }
             const required = require(registeredComponent.resolvedPath);
