@@ -51,3 +51,6 @@ Component.prototype.install = function() {
         }, 1000);
     });
 };
+module.exports = {
+    Component
+};

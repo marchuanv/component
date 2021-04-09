@@ -3,7 +3,7 @@ const fs = require('fs');
 const delegate = require("component.delegate");
 const { component } = require("./package.json");
 const logging = require("component.logging");
-const Component = require("./component.js");
+const { Component } = require("./prototypes.js");
 
 const capitalize = (s) => {
     if (typeof s !== 'string') return '';
