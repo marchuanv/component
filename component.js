@@ -180,7 +180,7 @@ module.exports = {
     on: async ({ eventName }, callback) => {
         return await delegate.register({ context: "global", name: eventName, overwriteDelegate: true }, callback);
     },
-    load: async ({ moduleName }) => {
+    load: async (moduleName) => {
         const registeredComponent = componentRegister.find( c => c.name === moduleName);
         if (!registeredComponent) {
             throw new Error(`component: "${moduleName}" is not registered.`);
