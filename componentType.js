@@ -42,12 +42,12 @@ Component.prototype.install = function() {
         let moduleToInstall = `${this.username}/${this.name}`;
         if (await this.isInstalled()){
             await this.log(`${moduleToInstall} installed.`);
+            this.componentConfig.load();
             return await resolve();
         } else if (!this.installing) {
             await this.log(`installing ${moduleToInstall}`);
             exec(`npm install ${moduleToInstall} --no-save --no-package-lock`, () => {});
             this.installing = true;
-            this.componentConfig.load();
         }
         setTimeout( async () => {
             resolve(await this.install());
