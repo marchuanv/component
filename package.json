@@ -18,9 +18,9 @@
   },
   "homepage": "https://github.com/marchuanv/component#readme",
   "dependencies": {
-    "utils": "github:marchuanv/utils",
-    "component.delegate": "github:marchuanv/component.delegate",
-    "component.logging": "github:marchuanv/component.logging"
+    "utils": "marchuanv/utils",
+    "component.messagebus": "marchuanv/component.messagebus",
+    "component.logging": "marchuanv/component.logging"
   },
   "component": {
     "gitUsername": "marchuanv"
