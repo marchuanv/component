@@ -19,9 +19,11 @@ module.exports = {
             }
             module.exports.registry.push(registeredComponent);
         }
-        for(const { moduleName } of registeredComponent.config.dependencies) {
-            await module.exports.load(moduleName);
-        };
+        if (registeredComponent.config.dependencies) {
+            for(const { moduleName } of registeredComponent.config.dependencies) {
+                await module.exports.load(moduleName);
+            };
+        }
         registeredComponent.exports = require(registeredComponent.config.resolvedPath);
         const results = {
             name: registeredComponent.config.friendlyName
