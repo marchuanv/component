@@ -4,6 +4,9 @@ const { ComponentConfig } = require("./lib/config.js");
 
 module.exports = {
     registry: [],
+    MessageBusSubscription,
+    MessageBusMessage,
+    MessageBusMessageStatus,
     load: async (componentModule = "") => {
         if (!componentModule){
             throw new Error("invalid parameter: componentModule");
@@ -30,8 +33,5 @@ module.exports = {
         };
         results[registeredComponent.config.friendlyName] = registeredComponent;
         return results;
-    },
-    MessageBusSubscription,
-    MessageBusMessage,
-    MessageBusMessageStatus
+    }
 };
