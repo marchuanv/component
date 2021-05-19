@@ -1,5 +1,5 @@
 const { component } = require("./package.json");
-const { Component, MessageBusSubscription, MessageBusMessage } = require("./lib/component.js");
+const { Component, MessageBusSubscription, MessageBusMessage, MessageBusMessageStatus } = require("./lib/component.js");
 const { ComponentConfig } = require("./lib/config.js");
 
 module.exports = {
