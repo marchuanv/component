@@ -1,5 +1,5 @@
 const { component } = require("./package.json");
-const { Component } = require("./lib/component.js");
+const { Component, MessageBusSubscription, MessageBusMessage } = require("./lib/component.js");
 const { ComponentConfig } = require("./lib/config.js");
 
 module.exports = {
@@ -30,5 +30,7 @@ module.exports = {
         };
         results[registeredComponent.config.friendlyName] = registeredComponent;
         return results;
-    }
+    },
+    MessageBusSubscription,
+    MessageBusMessage
 };
